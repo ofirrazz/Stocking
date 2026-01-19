@@ -1,0 +1,9 @@
+import com.example.stocksocial.ui.screens.auth.GetStartedScreen
+
+composable("get_started") {
+    GetStartedScreen(
+        onGetStarted = {
+
+        }
+    )
+}
