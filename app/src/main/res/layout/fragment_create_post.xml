@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/create_post"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+
+    <EditText
+        android:id="@+id/postContentInput"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginTop="12dp"
+        android:gravity="top"
+        android:hint="@string/what_is_on_your_mind"
+        android:inputType="textMultiLine" />
+
+    <Button
+        android:id="@+id/publishPostButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/publish" />
+
+</LinearLayout>

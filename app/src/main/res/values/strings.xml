@@ -1,3 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">stocksocial</string>
+    <string name="app_name">StockSocial</string>
+    <string name="feed">Feed</string>
+    <string name="stocks">Stocks</string>
+    <string name="articles">Articles</string>
+    <string name="profile">Profile</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="create_post">Create Post</string>
+    <string name="post_details">Post Details</string>
+    <string name="article_details">Article Details</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
+    <string name="publish">Publish</string>
+    <string name="what_is_on_your_mind">What is on your mind?</string>
+    <string name="post_details_placeholder">Post content placeholder</string>
+    <string name="article_details_placeholder">Article content placeholder</string>
 </resources>
