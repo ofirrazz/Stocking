@@ -17,7 +17,7 @@ class FeedAdapter(
 
     override fun onBindViewHolder(holder: FeedViewHolder, position: Int) {
         val item = items[position]
-        holder.binding.titleText.text = item.authorName
+        holder.binding.titleText.text = item.author.username
         holder.binding.subtitleText.text = item.content
     }
 

@@ -10,24 +10,24 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class StocksViewModel(
+class WatchlistViewModel(
     private val watchlistRepository: WatchlistRepository? = null
 ) : ViewModel() {
 
-    private val _stocksState = MutableStateFlow(UiState<List<WatchlistItem>>())
-    val stocksState: StateFlow<UiState<List<WatchlistItem>>> = _stocksState.asStateFlow()
+    private val _watchlistState = MutableStateFlow(UiState<List<WatchlistItem>>())
+    val watchlistState: StateFlow<UiState<List<WatchlistItem>>> = _watchlistState.asStateFlow()
 
-    fun loadStocks() {
+    fun loadWatchlist() {
         val repository = watchlistRepository ?: run {
-            _stocksState.value = UiState(errorMessage = "WatchlistRepository is not attached")
+            _watchlistState.value = UiState(errorMessage = "WatchlistRepository is not attached")
             return
         }
 
         viewModelScope.launch {
-            _stocksState.value = UiState(isLoading = true)
+            _watchlistState.value = UiState(isLoading = true)
             when (val result = repository.getWatchlist()) {
-                is RepositoryResult.Success -> _stocksState.value = UiState(data = result.data)
-                is RepositoryResult.Error -> _stocksState.value = UiState(errorMessage = result.message)
+                is RepositoryResult.Success -> _watchlistState.value = UiState(data = result.data)
+                is RepositoryResult.Error -> _watchlistState.value = UiState(errorMessage = result.message)
             }
         }
     }
