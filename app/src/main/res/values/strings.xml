@@ -7,6 +7,8 @@
     <string name="profile">Profile</string>
     <string name="login">Login</string>
     <string name="register">Register</string>
+    <string name="logout">Logout</string>
+    <string name="my_posts">My Posts</string>
     <string name="create_post">Create Post</string>
     <string name="post_details">Post Details</string>
     <string name="article_details">Article Details</string>
