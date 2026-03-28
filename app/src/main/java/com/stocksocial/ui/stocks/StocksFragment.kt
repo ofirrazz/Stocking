@@ -7,11 +7,15 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.stocksocial.databinding.FragmentStocksBinding
+import com.stocksocial.utils.appContainer
+import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.StocksViewModel
 
 class StocksFragment : Fragment() {
 
-    private val viewModel: StocksViewModel by viewModels()
+    private val viewModel: StocksViewModel by viewModels {
+        AppViewModelFactory(watchlistRepository = appContainer.watchlistRepository)
+    }
     private var _binding: FragmentStocksBinding? = null
     private val binding get() = _binding!!
 

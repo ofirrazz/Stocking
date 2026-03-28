@@ -7,11 +7,15 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.stocksocial.databinding.FragmentFeedBinding
+import com.stocksocial.utils.appContainer
+import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.FeedViewModel
 
 class FeedFragment : Fragment() {
 
-    private val viewModel: FeedViewModel by viewModels()
+    private val viewModel: FeedViewModel by viewModels {
+        AppViewModelFactory(feedRepository = appContainer.feedRepository)
+    }
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 

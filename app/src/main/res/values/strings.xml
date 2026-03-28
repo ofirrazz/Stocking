@@ -11,6 +11,7 @@
     <string name="post_details">Post Details</string>
     <string name="article_details">Article Details</string>
     <string name="email">Email</string>
+    <string name="username_or_email">Username or Email</string>
     <string name="password">Password</string>
     <string name="username">Username</string>
     <string name="publish">Publish</string>

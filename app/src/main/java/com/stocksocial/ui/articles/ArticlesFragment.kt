@@ -7,11 +7,15 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.stocksocial.databinding.FragmentArticlesBinding
+import com.stocksocial.utils.appContainer
+import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.ArticlesViewModel
 
 class ArticlesFragment : Fragment() {
 
-    private val viewModel: ArticlesViewModel by viewModels()
+    private val viewModel: ArticlesViewModel by viewModels {
+        AppViewModelFactory(articlesRepository = appContainer.articlesRepository)
+    }
     private var _binding: FragmentArticlesBinding? = null
     private val binding get() = _binding!!
 

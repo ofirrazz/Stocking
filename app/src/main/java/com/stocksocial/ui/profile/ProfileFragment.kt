@@ -7,11 +7,15 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.stocksocial.databinding.FragmentProfileBinding
+import com.stocksocial.utils.appContainer
+import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.ProfileViewModel
 
 class ProfileFragment : Fragment() {
 
-    private val viewModel: ProfileViewModel by viewModels()
+    private val viewModel: ProfileViewModel by viewModels {
+        AppViewModelFactory(profileRepository = appContainer.profileRepository)
+    }
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
