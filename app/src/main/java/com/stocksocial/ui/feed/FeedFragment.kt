@@ -6,8 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.stocksocial.databinding.FragmentFeedBinding
+import com.stocksocial.ui.adapters.FeedAdapter
 import com.stocksocial.utils.appContainer
+import com.stocksocial.utils.DummyData
 import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.FeedViewModel
 
@@ -26,6 +29,13 @@ class FeedFragment : Fragment() {
     ): View {
         _binding = FragmentFeedBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        binding.feedRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.feedRecyclerView.adapter = FeedAdapter(DummyData.feedPosts())
     }
 
     override fun onDestroyView() {
