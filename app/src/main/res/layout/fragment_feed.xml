@@ -23,7 +23,7 @@
             android:text="@string/feed"
             android:textColor="@color/feed_text_primary"
             android:textSize="30sp"
-            android:textStyle="700" />
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"

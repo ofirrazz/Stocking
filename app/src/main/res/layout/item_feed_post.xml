@@ -44,7 +44,7 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/feed_text_primary"
                     android:textSize="15sp"
-                    android:textStyle="700" />
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/timeText"
@@ -84,7 +84,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/feed_text_primary"
                 android:textSize="13sp"
-                android:textStyle="700" />
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/stockPriceText"
@@ -93,7 +93,7 @@
                 android:layout_marginStart="8dp"
                 android:textColor="@color/feed_accent_green"
                 android:textSize="13sp"
-                android:textStyle="600" />
+                android:textStyle="bold" />
         </LinearLayout>
 
         <LinearLayout
