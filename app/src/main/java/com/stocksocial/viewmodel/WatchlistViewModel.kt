@@ -1,39 +1,34 @@
 package com.stocksocial.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.WatchlistItem
 import com.stocksocial.repository.RepositoryResult
 import com.stocksocial.repository.WatchlistRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class WatchlistViewModel(
-    private val repository: WatchlistRepository = WatchlistRepository()
+    private val watchlistRepository: WatchlistRepository? = null
 ) : ViewModel() {
 
-    private val _items = MutableLiveData<List<WatchlistItem>>(emptyList())
-    val items: LiveData<List<WatchlistItem>> = _items
+    private val _watchlistState = MutableStateFlow(UiState<List<WatchlistItem>>())
+    val watchlistState: StateFlow<UiState<List<WatchlistItem>>> = _watchlistState.asStateFlow()
 
-    private val _isLoading = MutableLiveData(false)
-    val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _error = MutableLiveData<String?>(null)
-    val error: LiveData<String?> = _error
-
-    fun load(userId: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            when (val result = repository.getWatchlist(userId)) {
-                is RepositoryResult.Success -> _items.value = result.data
-                is RepositoryResult.Error -> _error.value = result.message
-            }
-            _isLoading.value = false
+    fun loadWatchlist() {
+        val repository = watchlistRepository ?: run {
+            _watchlistState.value = UiState(errorMessage = "WatchlistRepository is not attached")
+            return
         }
-    }
 
-    fun clearError() {
-        _error.value = null
+        viewModelScope.launch {
+            _watchlistState.value = UiState(isLoading = true)
+            when (val result = repository.getWatchlist()) {
+                is RepositoryResult.Success -> _watchlistState.value = UiState(data = result.data)
+                is RepositoryResult.Error -> _watchlistState.value = UiState(errorMessage = result.message)
+            }
+        }
     }
 }

@@ -2,12 +2,17 @@ package com.stocksocial.model.auth
 
 import com.stocksocial.model.User
 
-data class LoginResponse(
-    val token: String,
+data class AuthResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val tokenType: String = "Bearer",
+    val expiresInSeconds: Long,
     val user: User
 )
 
-data class RegisterResponse(
-    val token: String,
-    val user: User
+data class RefreshTokenResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val tokenType: String = "Bearer",
+    val expiresInSeconds: Long
 )

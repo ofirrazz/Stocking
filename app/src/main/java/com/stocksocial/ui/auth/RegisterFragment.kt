@@ -4,14 +4,21 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import com.stocksocial.R
 import com.stocksocial.databinding.FragmentRegisterBinding
+import com.stocksocial.utils.appContainer
+import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
 
 class RegisterFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: AuthViewModel by viewModels {
+        AppViewModelFactory(authRepository = appContainer.authRepository)
+    }
     private var _binding: FragmentRegisterBinding? = null
     private val binding get() = _binding!!
 
@@ -22,6 +29,22 @@ class RegisterFragment : Fragment() {
     ): View {
         _binding = FragmentRegisterBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        binding.registerButton.setOnClickListener {
+            val username = binding.usernameInput.text?.toString()?.trim().orEmpty()
+            val email = binding.emailInput.text?.toString()?.trim().orEmpty()
+            val password = binding.passwordInput.text?.toString().orEmpty()
+
+            if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(requireContext(), "Fill all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            findNavController().navigate(R.id.feedFragment)
+        }
     }
 
     override fun onDestroyView() {

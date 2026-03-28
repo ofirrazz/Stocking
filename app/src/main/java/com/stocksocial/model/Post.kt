@@ -1,15 +1,14 @@
 package com.stocksocial.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
-@Entity(tableName = "posts")
 data class Post(
-    @PrimaryKey val id: String,
-    val authorId: String,
-    val authorName: String,
+    val id: String,
+    val author: User,
     val content: String,
+    val createdAt: String,
+    val likesCount: Int = 0,
+    val commentsCount: Int = 0,
+    val stockSymbol: String? = null,
+    val stockPrice: Double? = null,
     val imageUrl: String? = null,
-    val createdAt: Long = System.currentTimeMillis(),
-    var isDeleted: Boolean = false // לניהול סנכרון אם תרצה
+    val videoUrl: String? = null
 )

@@ -1,74 +1,39 @@
 package com.stocksocial.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.*
-import com.stocksocial.model.AppLocalDb
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Post
 import com.stocksocial.repository.FeedRepository
-import com.google.firebase.auth.FirebaseAuth
+import com.stocksocial.repository.RepositoryResult
+import com.stocksocial.utils.DummyData
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.UUID
 
-class FeedViewModel(application: Application) : AndroidViewModel(application) {
-    
-    private val repository: FeedRepository
-    val allPosts: LiveData<List<Post>>
-    
-    // LiveData to track loading status
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> get() = _isLoading
+class FeedViewModel(
+    private val feedRepository: FeedRepository? = null
+) : ViewModel() {
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> get() = _error
+    private val _feedState = MutableStateFlow(UiState<List<Post>>())
+    val feedState: StateFlow<UiState<List<Post>>> = _feedState.asStateFlow()
 
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-
-    init {
-        val postDao = AppLocalDb.getDatabase(application).postDao()
-        repository = FeedRepository(postDao)
-        allPosts = repository.allPosts
-    }
-
-    // Refresh posts and update loading state
-    fun refresh() {
-        viewModelScope.launch {
-            _isLoading.postValue(true)
-            repository.refreshPosts()
-            _isLoading.postValue(false)
-        }
-    }
-
-    fun addPost(post: Post) {
-        viewModelScope.launch {
-            _isLoading.postValue(true)
-            repository.addPost(post)
-            _isLoading.postValue(false)
-        }
-    }
-
-    /**
-     * Creates a Post from the currently logged-in user.
-     * Keeps UI logic inside ViewModel (MVVM).
-     */
-    fun publishPost(content: String) {
-        val user = auth.currentUser
-        if (user == null) {
-            _error.postValue("You must be logged in")
+    fun loadFeed() {
+        val repository = feedRepository ?: run {
+            _feedState.value = UiState(data = DummyData.feedPosts())
             return
         }
 
-        val post = Post(
-            id = UUID.randomUUID().toString(),
-            authorId = user.uid,
-            authorName = user.displayName ?: user.email ?: "Unknown",
-            content = content,
-            imageUrl = null,
-            createdAt = System.currentTimeMillis()
-        )
-        addPost(post)
+        viewModelScope.launch {
+            _feedState.value = UiState(isLoading = true)
+            when (val result = repository.getFeedPosts()) {
+                is RepositoryResult.Success -> _feedState.value = UiState(data = result.data)
+                is RepositoryResult.Error -> _feedState.value = UiState(errorMessage = result.message)
+            }
+        }
     }
 
-    fun clearError() {
-        _error.value = null
+    fun refreshMockFeed() {
+        _feedState.value = UiState(data = DummyData.feedPosts())
     }
 }

@@ -1,50 +1,53 @@
 package com.stocksocial.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.stocksocial.model.Post
 import com.stocksocial.model.User
 import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.repository.RepositoryResult
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
-    private val profileRepository: ProfileRepository = ProfileRepository()
+    private val profileRepository: ProfileRepository? = null
 ) : ViewModel() {
-    private val auth = FirebaseAuth.getInstance()
-    
-    private val _user = MutableLiveData<FirebaseUser?>()
-    val user: LiveData<FirebaseUser?> = _user
 
-    private val _profile = MutableLiveData<User?>()
-    val profile: LiveData<User?> = _profile
+    private val _profileState = MutableStateFlow(UiState<User>())
+    val profileState: StateFlow<UiState<User>> = _profileState.asStateFlow()
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
-
-    init {
-        _user.value = auth.currentUser
-    }
+    private val _userPostsState = MutableStateFlow(UiState<List<Post>>())
+    val userPostsState: StateFlow<UiState<List<Post>>> = _userPostsState.asStateFlow()
 
     fun loadProfile() {
-        val currentUser = auth.currentUser ?: return
+        val repository = profileRepository ?: run {
+            _profileState.value = UiState(errorMessage = "ProfileRepository is not attached")
+            return
+        }
+
         viewModelScope.launch {
-            when (val result = profileRepository.getProfile(currentUser.uid)) {
-                is RepositoryResult.Success -> _profile.value = result.data
-                is RepositoryResult.Error -> _error.value = result.message
+            _profileState.value = UiState(isLoading = true)
+            when (val result = repository.getProfile()) {
+                is RepositoryResult.Success -> _profileState.value = UiState(data = result.data)
+                is RepositoryResult.Error -> _profileState.value = UiState(errorMessage = result.message)
             }
         }
     }
 
-    fun logout() {
-        auth.signOut()
-        _user.value = null
-    }
+    fun loadMyPosts() {
+        val repository = profileRepository ?: run {
+            _userPostsState.value = UiState(errorMessage = "ProfileRepository is not attached")
+            return
+        }
 
-    fun clearError() {
-        _error.value = null
+        viewModelScope.launch {
+            _userPostsState.value = UiState(isLoading = true)
+            when (val result = repository.getMyPosts()) {
+                is RepositoryResult.Success -> _userPostsState.value = UiState(data = result.data)
+                is RepositoryResult.Error -> _userPostsState.value = UiState(errorMessage = result.message)
+            }
+        }
     }
 }

@@ -1,79 +1,95 @@
 package com.stocksocial.repository
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.stocksocial.model.auth.AuthResponse
 import com.stocksocial.model.auth.LoginRequest
-import com.stocksocial.model.auth.LoginResponse
+import com.stocksocial.model.auth.RefreshTokenRequest
+import com.stocksocial.model.auth.RefreshTokenResponse
 import com.stocksocial.model.auth.RegisterRequest
-import com.stocksocial.model.auth.RegisterResponse
 import com.stocksocial.network.ApiService
-import com.stocksocial.network.RetrofitClient
 import com.stocksocial.utils.TokenManager
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class AuthRepository(
-    private val apiService: ApiService = RetrofitClient.apiService,
-    private val tokenManager: TokenManager? = null
+    private val apiService: ApiService,
+    private val tokenManager: TokenManager
 ) {
-    private val auth = FirebaseAuth.getInstance()
 
-    val currentUser: FirebaseUser?
-        get() = auth.currentUser
-
-    suspend fun login(email: String, pass: String): FirebaseUser? {
-        return try {
-            auth.signInWithEmailAndPassword(email, pass).await().user
-        } catch (e: Exception) {
-            null
-        }
+    suspend fun login(
+        email: String,
+        password: String
+    ): RepositoryResult<AuthResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            apiService.login(LoginRequest(email = email, password = password))
+        }.fold(
+            onSuccess = { response ->
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    tokenManager.saveToken(body.accessToken)
+                    RepositoryResult.Success(body)
+                } else {
+                    RepositoryResult.Error("Login failed: ${response.code()}")
+                }
+            },
+            onFailure = { throwable ->
+                RepositoryResult.Error("Login request failed", throwable)
+            }
+        )
     }
 
-    suspend fun register(email: String, pass: String): FirebaseUser? {
-        return try {
-            auth.createUserWithEmailAndPassword(email, pass).await().user
-        } catch (e: Exception) {
-            null
-        }
+    suspend fun register(
+        username: String,
+        email: String,
+        password: String
+    ): RepositoryResult<AuthResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            apiService.register(
+                RegisterRequest(
+                    username = username,
+                    email = email,
+                    password = password
+                )
+            )
+        }.fold(
+            onSuccess = { response ->
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    tokenManager.saveToken(body.accessToken)
+                    RepositoryResult.Success(body)
+                } else {
+                    RepositoryResult.Error("Registration failed: ${response.code()}")
+                }
+            },
+            onFailure = { throwable ->
+                RepositoryResult.Error("Registration request failed", throwable)
+            }
+        )
     }
+
+    suspend fun refreshToken(
+        refreshToken: String
+    ): RepositoryResult<RefreshTokenResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            apiService.refreshToken(RefreshTokenRequest(refreshToken = refreshToken))
+        }.fold(
+            onSuccess = { response ->
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    tokenManager.saveToken(body.accessToken)
+                    RepositoryResult.Success(body)
+                } else {
+                    RepositoryResult.Error("Token refresh failed: ${response.code()}")
+                }
+            },
+            onFailure = { throwable ->
+                RepositoryResult.Error("Token refresh request failed", throwable)
+            }
+        )
+    }
+
+    fun getSavedToken(): String? = tokenManager.getToken()
 
     fun logout() {
-        auth.signOut()
-        tokenManager?.clearToken()
-    }
-
-    suspend fun loginWithApi(email: String, pass: String): RepositoryResult<LoginResponse> {
-        return try {
-            val response = apiService.login(LoginRequest(email = email, password = pass))
-            val body = response.body()
-            if (response.isSuccessful && body != null) {
-                tokenManager?.saveToken(body.token)
-                RepositoryResult.Success(body)
-            } else {
-                RepositoryResult.Error("API login failed: ${response.code()}")
-            }
-        } catch (e: Exception) {
-            RepositoryResult.Error("Network error during API login", e)
-        }
-    }
-
-    suspend fun registerWithApi(
-        email: String,
-        pass: String,
-        username: String
-    ): RepositoryResult<RegisterResponse> {
-        return try {
-            val response = apiService.register(
-                RegisterRequest(email = email, password = pass, username = username)
-            )
-            val body = response.body()
-            if (response.isSuccessful && body != null) {
-                tokenManager?.saveToken(body.token)
-                RepositoryResult.Success(body)
-            } else {
-                RepositoryResult.Error("API register failed: ${response.code()}")
-            }
-        } catch (e: Exception) {
-            RepositoryResult.Error("Network error during API register", e)
-        }
+        tokenManager.clearToken()
     }
 }
