@@ -60,7 +60,10 @@ object DummyData {
             content = "Took partial profit on AAPL after breakout.",
             createdAt = "Today",
             likesCount = 10,
-            commentsCount = 2
+            commentsCount = 2,
+            stockSymbol = "AAPL",
+            stockPrice = 227.45,
+            imageUrl = "mock://chart-image"
         ),
         Post(
             id = "up2",
@@ -68,7 +71,22 @@ object DummyData {
             content = "My weekly portfolio review is done. Risk is under control.",
             createdAt = "3 days ago",
             likesCount = 18,
-            commentsCount = 4
+            commentsCount = 4,
+            stockSymbol = "MSFT",
+            stockPrice = 431.90,
+            videoUrl = "mock://trade-recap-video"
+        ),
+        Post(
+            id = "up3",
+            author = currentUser,
+            content = "Uploaded both chart snapshot and recap video for this swing setup.",
+            createdAt = "5 days ago",
+            likesCount = 27,
+            commentsCount = 9,
+            stockSymbol = "NVDA",
+            stockPrice = 912.60,
+            imageUrl = "mock://setup-image",
+            videoUrl = "mock://setup-video"
         )
     )
 

@@ -8,5 +8,7 @@ data class Post(
     val likesCount: Int = 0,
     val commentsCount: Int = 0,
     val stockSymbol: String? = null,
-    val stockPrice: Double? = null
+    val stockPrice: Double? = null,
+    val imageUrl: String? = null,
+    val videoUrl: String? = null
 )
