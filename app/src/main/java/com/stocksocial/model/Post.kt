@@ -6,5 +6,7 @@ data class Post(
     val content: String,
     val createdAt: String,
     val likesCount: Int = 0,
-    val commentsCount: Int = 0
+    val commentsCount: Int = 0,
+    val stockSymbol: String? = null,
+    val stockPrice: Double? = null
 )

@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">StockSocial</string>
     <string name="feed">Feed</string>
+    <string name="feed_subtitle">Track ideas, market moves and community sentiment</string>
     <string name="stocks">Stocks</string>
     <string name="articles">Articles</string>
     <string name="profile">Profile</string>

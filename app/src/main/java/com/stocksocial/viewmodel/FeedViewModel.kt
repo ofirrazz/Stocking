@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Post
 import com.stocksocial.repository.FeedRepository
 import com.stocksocial.repository.RepositoryResult
+import com.stocksocial.utils.DummyData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +20,7 @@ class FeedViewModel(
 
     fun loadFeed() {
         val repository = feedRepository ?: run {
-            _feedState.value = UiState(errorMessage = "FeedRepository is not attached")
+            _feedState.value = UiState(data = DummyData.feedPosts())
             return
         }
 
@@ -30,5 +31,9 @@ class FeedViewModel(
                 is RepositoryResult.Error -> _feedState.value = UiState(errorMessage = result.message)
             }
         }
+    }
+
+    fun refreshMockFeed() {
+        _feedState.value = UiState(data = DummyData.feedPosts())
     }
 }
