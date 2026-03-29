@@ -73,7 +73,8 @@
                     android:id="@+id/emailInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textEmailAddress"
+                    android:autofillHints="username,emailAddress"
+                    android:inputType="text|textNoSuggestions"
                     android:textColor="@color/feed_text_primary"
                     android:textColorHint="@color/feed_text_muted" />
             </com.google.android.material.textfield.TextInputLayout>

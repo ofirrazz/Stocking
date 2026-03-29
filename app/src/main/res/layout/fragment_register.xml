@@ -73,7 +73,8 @@
                     android:id="@+id/usernameInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
+                    android:autofillHints="username"
+                    android:inputType="textPersonName|textNoSuggestions"
                     android:textColor="@color/feed_text_primary"
                     android:textColorHint="@color/feed_text_muted" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -96,7 +97,8 @@
                     android:id="@+id/emailInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textEmailAddress"
+                    android:autofillHints="emailAddress"
+                    android:inputType="textEmailAddress|textNoSuggestions"
                     android:textColor="@color/feed_text_primary"
                     android:textColorHint="@color/feed_text_muted" />
             </com.google.android.material.textfield.TextInputLayout>
