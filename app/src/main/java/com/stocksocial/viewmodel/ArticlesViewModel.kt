@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Article
 import com.stocksocial.repository.ArticlesRepository
 import com.stocksocial.repository.RepositoryResult
+import com.stocksocial.utils.DummyData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +23,7 @@ class ArticlesViewModel(
 
     fun loadArticles() {
         val repository = articlesRepository ?: run {
-            _articlesState.value = UiState(errorMessage = "ArticlesRepository is not attached")
+            _articlesState.value = UiState(data = DummyData.articles())
             return
         }
 
@@ -37,7 +38,12 @@ class ArticlesViewModel(
 
     fun loadArticleDetails(articleId: String) {
         val repository = articlesRepository ?: run {
-            _articleDetailsState.value = UiState(errorMessage = "ArticlesRepository is not attached")
+            val article = DummyData.articleById(articleId)
+            if (article != null) {
+                _articleDetailsState.value = UiState(data = article)
+            } else {
+                _articleDetailsState.value = UiState(errorMessage = "Article not found")
+            }
             return
         }
 
@@ -48,5 +54,9 @@ class ArticlesViewModel(
                 is RepositoryResult.Error -> _articleDetailsState.value = UiState(errorMessage = result.message)
             }
         }
+    }
+
+    fun loadMockArticles() {
+        _articlesState.value = UiState(data = DummyData.articles())
     }
 }
