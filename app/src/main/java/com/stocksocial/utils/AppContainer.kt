@@ -3,10 +3,12 @@ package com.stocksocial.utils
 import android.content.Context
 import com.stocksocial.local.StockSocialDatabase
 import com.stocksocial.network.RetrofitInstance
+import com.stocksocial.remote.firestore.FirestorePostDataSource
 import com.stocksocial.repository.ArticlesRepository
 import com.stocksocial.repository.AuthRepository
 import com.stocksocial.repository.FeedRepository
 import com.stocksocial.repository.LocalPostsRepository
+import com.stocksocial.repository.PostsRepository
 import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.repository.WatchlistRepository
 
@@ -16,6 +18,7 @@ class AppContainer(context: Context) {
     private val tokenManager = TokenManager(appContext)
     private val apiService = RetrofitInstance.createApiService(tokenManager)
     private val database = StockSocialDatabase.getInstance(appContext)
+    private val firestorePostDataSource = FirestorePostDataSource()
 
     val authRepository: AuthRepository by lazy {
         AuthRepository(
@@ -28,4 +31,10 @@ class AppContainer(context: Context) {
     val articlesRepository: ArticlesRepository by lazy { ArticlesRepository(apiService) }
     val watchlistRepository: WatchlistRepository by lazy { WatchlistRepository(apiService) }
     val localPostsRepository: LocalPostsRepository by lazy { LocalPostsRepository(database.postDao()) }
+    val postsRepository: PostsRepository by lazy {
+        PostsRepository(
+            localPostsRepository = localPostsRepository,
+            firestorePostDataSource = firestorePostDataSource
+        )
+    }
 }

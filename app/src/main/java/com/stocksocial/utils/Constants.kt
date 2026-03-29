@@ -5,4 +5,5 @@ object Constants {
     const val CONNECT_TIMEOUT_SECONDS = 20L
     const val READ_TIMEOUT_SECONDS = 20L
     const val WRITE_TIMEOUT_SECONDS = 20L
+    const val POSTS_COLLECTION = "posts"
 }

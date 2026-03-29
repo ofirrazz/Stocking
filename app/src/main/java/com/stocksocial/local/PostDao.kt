@@ -18,6 +18,12 @@ interface PostDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(post: PostEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(posts: List<PostEntity>)
+
+    @Query("DELETE FROM posts WHERE userId = :userId")
+    suspend fun deleteByUserId(userId: String)
+
     @Query("DELETE FROM posts WHERE id = :postId")
     suspend fun deleteById(postId: String)
 }

@@ -44,6 +44,31 @@ class LocalPostsRepository(
         postDao.deleteById(postId)
     }
 
+    suspend fun cachePosts(posts: List<Post>) {
+        postDao.upsertAll(posts.map { it.toEntity() })
+    }
+
+    suspend fun replacePostsForUser(userId: String, posts: List<Post>) {
+        postDao.deleteByUserId(userId)
+        cachePosts(posts)
+    }
+
+    private fun Post.toEntity(): PostEntity {
+        return PostEntity(
+            id = id,
+            userId = author.id,
+            username = author.username,
+            content = content,
+            createdAt = createdAt,
+            likesCount = likesCount,
+            commentsCount = commentsCount,
+            stockSymbol = stockSymbol,
+            stockPrice = stockPrice,
+            imageUrl = imageUrl,
+            videoUrl = videoUrl
+        )
+    }
+
     private fun PostEntity.toDomain(): Post {
         return Post(
             id = id,

@@ -8,12 +8,14 @@ local.properties
 
 # IntelliJ / Android Studio
 *.iml
+.idea/
 .idea/caches/
 .idea/workspace.xml
 .idea/deploymentTargetSelector.xml
 .idea/libraries/
 .idea/modules.xml
 .idea/navEditor.xml
+app/google-services.json
 
 # Native build outputs
 .externalNativeBuild/
