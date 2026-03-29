@@ -1,3 +1,7 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
 # Gradle
 .gradle/
 build/
@@ -14,6 +18,7 @@ local.properties
 .idea/libraries/
 .idea/modules.xml
 .idea/navEditor.xml
+.idea/studiobot.xml
 
 # Native build outputs
 .externalNativeBuild/

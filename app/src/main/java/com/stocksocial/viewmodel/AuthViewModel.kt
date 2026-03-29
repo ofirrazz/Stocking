@@ -1,6 +1,8 @@
 package com.stocksocial.viewmodel
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.User
 import com.stocksocial.repository.AuthRepository
@@ -11,26 +13,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
-    private val authRepository: AuthRepository? = null
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow(UiState<AuthUiModel>())
     val authState: StateFlow<UiState<AuthUiModel>> = _authState.asStateFlow()
+    val authStateLive: LiveData<UiState<AuthUiModel>> = _authState.asLiveData()
 
     fun login(email: String, password: String) {
-        val repository = authRepository ?: run {
-            _authState.value = UiState(errorMessage = "AuthRepository is not attached")
-            return
-        }
-
         viewModelScope.launch {
             _authState.value = UiState(isLoading = true)
-            when (val result = repository.login(email, password)) {
+            when (val result = authRepository.login(email, password)) {
                 is RepositoryResult.Success -> {
                     _authState.value = UiState(
                         data = AuthUiModel(
                             isAuthenticated = true,
-                            user = result.data.user
+                            user = result.data
                         )
                     )
                 }
@@ -42,19 +40,14 @@ class AuthViewModel(
     }
 
     fun register(username: String, email: String, password: String) {
-        val repository = authRepository ?: run {
-            _authState.value = UiState(errorMessage = "AuthRepository is not attached")
-            return
-        }
-
         viewModelScope.launch {
             _authState.value = UiState(isLoading = true)
-            when (val result = repository.register(username, email, password)) {
+            when (val result = authRepository.register(username, email, password)) {
                 is RepositoryResult.Success -> {
                     _authState.value = UiState(
                         data = AuthUiModel(
                             isAuthenticated = true,
-                            user = result.data.user
+                            user = result.data
                         )
                     )
                 }
@@ -66,7 +59,7 @@ class AuthViewModel(
     }
 
     fun logout() {
-        authRepository?.logout()
+        authRepository.logout()
         _authState.value = UiState(
             data = AuthUiModel(isAuthenticated = false, user = null)
         )

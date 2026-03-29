@@ -13,27 +13,27 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class StocksViewModel(
-    private val watchlistRepository: WatchlistRepository? = null
+    private val watchlistRepository: WatchlistRepository
 ) : ViewModel() {
 
     private val _stocksState = MutableStateFlow(UiState(data = StocksUiData()))
     val stocksState: StateFlow<UiState<StocksUiData>> = _stocksState.asStateFlow()
 
     fun loadStocks() {
-        val repository = watchlistRepository ?: run {
-            _stocksState.value = UiState(data = buildMockData())
-            return
-        }
-
         viewModelScope.launch {
             _stocksState.value = UiState(isLoading = true)
-            when (val result = repository.getWatchlist()) {
+            when (val result = watchlistRepository.getWatchlist()) {
                 is RepositoryResult.Success -> {
                     _stocksState.value = UiState(
                         data = buildMockData(watchlistOverride = result.data.map { it.stock })
                     )
                 }
-                is RepositoryResult.Error -> _stocksState.value = UiState(errorMessage = result.message)
+                is RepositoryResult.Error -> {
+                    _stocksState.value = UiState(
+                        data = buildMockData(),
+                        errorMessage = result.message
+                    )
+                }
             }
         }
     }

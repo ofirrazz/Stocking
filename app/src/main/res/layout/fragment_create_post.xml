@@ -20,6 +20,22 @@
         android:hint="@string/what_is_on_your_mind"
         android:inputType="textMultiLine" />
 
+    <ImageView
+        android:id="@+id/imagePreview"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:layout_marginTop="12dp"
+        android:contentDescription="@string/post_image"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/pickImageButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/pick_image" />
+
     <Button
         android:id="@+id/publishPostButton"
         android:layout_width="match_parent"

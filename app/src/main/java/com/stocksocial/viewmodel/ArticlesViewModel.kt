@@ -5,14 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Article
 import com.stocksocial.repository.ArticlesRepository
 import com.stocksocial.repository.RepositoryResult
-import com.stocksocial.utils.DummyData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ArticlesViewModel(
-    private val articlesRepository: ArticlesRepository? = null
+    private val articlesRepository: ArticlesRepository
 ) : ViewModel() {
 
     private val _articlesState = MutableStateFlow(UiState<List<Article>>())
@@ -22,41 +21,30 @@ class ArticlesViewModel(
     val articleDetailsState: StateFlow<UiState<Article>> = _articleDetailsState.asStateFlow()
 
     fun loadArticles() {
-        val repository = articlesRepository ?: run {
-            _articlesState.value = UiState(data = DummyData.articles())
-            return
-        }
-
         viewModelScope.launch {
             _articlesState.value = UiState(isLoading = true)
-            when (val result = repository.getArticles()) {
-                is RepositoryResult.Success -> _articlesState.value = UiState(data = result.data)
-                is RepositoryResult.Error -> _articlesState.value = UiState(errorMessage = result.message)
+            when (val result = articlesRepository.getArticles()) {
+                is RepositoryResult.Success -> {
+                    _articlesState.value = UiState(data = result.data)
+                }
+                is RepositoryResult.Error -> {
+                    _articlesState.value = UiState(errorMessage = result.message)
+                }
             }
         }
     }
 
     fun loadArticleDetails(articleId: String) {
-        val repository = articlesRepository ?: run {
-            val article = DummyData.articleById(articleId)
-            if (article != null) {
-                _articleDetailsState.value = UiState(data = article)
-            } else {
-                _articleDetailsState.value = UiState(errorMessage = "Article not found")
-            }
-            return
-        }
-
         viewModelScope.launch {
             _articleDetailsState.value = UiState(isLoading = true)
-            when (val result = repository.getArticleById(articleId)) {
-                is RepositoryResult.Success -> _articleDetailsState.value = UiState(data = result.data)
-                is RepositoryResult.Error -> _articleDetailsState.value = UiState(errorMessage = result.message)
+            when (val result = articlesRepository.getArticleById(articleId)) {
+                is RepositoryResult.Success -> {
+                    _articleDetailsState.value = UiState(data = result.data)
+                }
+                is RepositoryResult.Error -> {
+                    _articleDetailsState.value = UiState(errorMessage = result.message)
+                }
             }
         }
-    }
-
-    fun loadMockArticles() {
-        _articlesState.value = UiState(data = DummyData.articles())
     }
 }

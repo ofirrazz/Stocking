@@ -9,11 +9,11 @@ import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.repository.WatchlistRepository
 
 class AppViewModelFactory(
-    private val authRepository: AuthRepository? = null,
-    private val feedRepository: FeedRepository? = null,
-    private val profileRepository: ProfileRepository? = null,
-    private val articlesRepository: ArticlesRepository? = null,
-    private val watchlistRepository: WatchlistRepository? = null
+    private val authRepository: AuthRepository,
+    private val feedRepository: FeedRepository,
+    private val profileRepository: ProfileRepository,
+    private val articlesRepository: ArticlesRepository,
+    private val watchlistRepository: WatchlistRepository
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

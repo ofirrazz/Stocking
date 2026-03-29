@@ -11,21 +11,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentArticlesBinding
 import com.stocksocial.model.Article
 import com.stocksocial.ui.adapters.ArticlesAdapter
-import com.stocksocial.utils.appContainer
-import com.stocksocial.viewmodel.AppViewModelFactory
+import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.ArticlesViewModel
 import kotlinx.coroutines.launch
 
 class ArticlesFragment : Fragment() {
 
-    private val viewModel: ArticlesViewModel by viewModels {
-        AppViewModelFactory(articlesRepository = appContainer.articlesRepository)
-    }
+    private val viewModel: ArticlesViewModel by viewModels { appViewModelFactory }
     private val articlesAdapter = ArticlesAdapter { article ->
         findNavController().navigate(
             R.id.action_articlesFragment_to_articleDetailsFragment,
@@ -48,7 +44,8 @@ class ArticlesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.articlesRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.articlesRecyclerView.layoutManager =
+            androidx.recyclerview.widget.LinearLayoutManager(requireContext())
         binding.articlesRecyclerView.adapter = articlesAdapter
 
         setupCategoryFiltering()
@@ -62,7 +59,7 @@ class ArticlesFragment : Fragment() {
             }
         }
 
-        viewModel.loadMockArticles()
+        viewModel.loadArticles()
     }
 
     private fun setupCategoryFiltering() {
@@ -82,13 +79,12 @@ class ArticlesFragment : Fragment() {
     }
 
     private fun applyFilter(category: String) {
-        if (category == getString(R.string.category_all)) {
-            articlesAdapter.submitList(allArticles)
-            return
-        }
-        articlesAdapter.submitList(
+        val filtered = if (category == getString(R.string.category_all)) {
+            allArticles
+        } else {
             allArticles.filter { it.category.equals(category, ignoreCase = true) }
-        )
+        }
+        articlesAdapter.submitList(filtered)
     }
 
     override fun onDestroyView() {

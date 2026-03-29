@@ -1,27 +1,22 @@
 package com.stocksocial.repository
 
 import com.stocksocial.model.WatchlistItem
-import com.stocksocial.network.ApiService
+import com.stocksocial.utils.DummyData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class WatchlistRepository(
-    private val apiService: ApiService
-) {
+class WatchlistRepository {
 
     suspend fun getWatchlist(): RepositoryResult<List<WatchlistItem>> = withContext(Dispatchers.IO) {
-        runCatching { apiService.getWatchlist() }.fold(
-            onSuccess = { response ->
-                val body = response.body()
-                if (response.isSuccessful && body != null) {
-                    RepositoryResult.Success(body)
-                } else {
-                    RepositoryResult.Error("Failed to fetch watchlist: ${response.code()}")
-                }
-            },
-            onFailure = { throwable ->
-                RepositoryResult.Error("Watchlist request failed", throwable)
-            }
-        )
+        val stocks = DummyData.watchlistStocks()
+        val items = stocks.mapIndexed { index, stock ->
+            WatchlistItem(
+                id = "local_$index",
+                userId = "local",
+                stock = stock,
+                createdAt = ""
+            )
+        }
+        RepositoryResult.Success(items)
     }
 }
