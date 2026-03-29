@@ -6,14 +6,12 @@ import com.stocksocial.repository.ArticlesRepository
 import com.stocksocial.repository.AuthRepository
 import com.stocksocial.repository.FeedRepository
 import com.stocksocial.repository.ProfileRepository
-import com.stocksocial.repository.WatchlistRepository
 
 class AppViewModelFactory(
     private val authRepository: AuthRepository,
     private val feedRepository: FeedRepository,
     private val profileRepository: ProfileRepository,
-    private val articlesRepository: ArticlesRepository,
-    private val watchlistRepository: WatchlistRepository
+    private val articlesRepository: ArticlesRepository
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -31,10 +29,7 @@ class AppViewModelFactory(
                 ArticlesViewModel(articlesRepository)
             }
             modelClass.isAssignableFrom(StocksViewModel::class.java) -> {
-                StocksViewModel(watchlistRepository)
-            }
-            modelClass.isAssignableFrom(WatchlistViewModel::class.java) -> {
-                WatchlistViewModel(watchlistRepository)
+                StocksViewModel()
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }

@@ -10,6 +10,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.navArgs
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentArticleDetailsBinding
 import com.stocksocial.model.Article
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 
 class ArticleDetailsFragment : Fragment() {
 
+    private val args: ArticleDetailsFragmentArgs by navArgs()
     private val viewModel: ArticlesViewModel by viewModels { appViewModelFactory }
     private var _binding: FragmentArticleDetailsBinding? = null
     private val binding get() = _binding!!
@@ -35,7 +37,7 @@ class ArticleDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val articleId = requireArguments().getString("articleId").orEmpty()
+        val articleId = args.articleId
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

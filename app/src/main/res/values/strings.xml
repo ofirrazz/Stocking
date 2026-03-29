@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">StockSocial</string>
+    <string name="splash_tagline">Your network for markets and ideas</string>
+    <string name="tap_to_continue">Tap to continue</string>
     <string name="feed">Feed</string>
     <string name="feed_subtitle">Track ideas, market moves and community sentiment</string>
     <string name="stocks">Stocks</string>
@@ -19,6 +21,21 @@
     <string name="category_technology">Technology</string>
     <string name="category_automotive">Automotive</string>
     <string name="profile">Profile</string>
+    <string name="portfolio">Portfolio</string>
+    <string name="portfolio_my">My portfolio</string>
+    <string name="notifications">Notifications</string>
+    <string name="alerts">Alerts</string>
+    <string name="total_value">Total value</string>
+    <string name="holdings">Holdings</string>
+    <string name="shares_count">%1$d shares</string>
+    <string name="portfolio_performance">Portfolio performance</string>
+    <string name="perf_month">This month</string>
+    <string name="perf_year">This year</string>
+    <string name="perf_all">All time</string>
+    <string name="mark_all_read">Mark all read</string>
+    <string name="stat_followers">Followers</string>
+    <string name="stat_following">Following</string>
+    <string name="stat_posts">Posts</string>
     <string name="profile_full_name">Ofir Raz</string>
     <string name="profile_username">@ofirrazz</string>
     <string name="profile_bio">Building StockSocial for investors, traders and market creators.</string>
@@ -40,7 +57,23 @@
     <string name="action_share">Share</string>
     <string name="login">Login</string>
     <string name="login_subtitle">Welcome back to your stock community</string>
+    <string name="login_welcome_back">Welcome back</string>
+    <string name="login_sign_in_continue">Sign in to continue</string>
+    <string name="login_no_account_register">No account? Register</string>
     <string name="register">Register</string>
+    <string name="register_subtitle">Create your account to join the community</string>
+    <string name="join_title">Join StockSocial</string>
+    <string name="join_subtitle">Create an account and start building your portfolio</string>
+    <string name="continue_google">Continue with Google</string>
+    <string name="or">or</string>
+    <string name="full_name">Full name</string>
+    <string name="password_min_hint">Password (min 8 characters)</string>
+    <string name="create_account">Create account</string>
+    <string name="terms_notice">By signing up, you agree to the Terms and Privacy Policy</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="log_in">Log in</string>
+    <string name="register_password_too_short">Password must be at least 8 characters</string>
+    <string name="coming_soon">Coming soon</string>
     <string name="logout">Logout</string>
     <string name="my_posts">My Posts</string>
     <string name="create_post">Create Post</string>
@@ -61,4 +94,16 @@
     <string name="fill_register_fields">Fill all fields</string>
     <string name="post_needs_content">Add text or an image</string>
     <string name="published_ok">Post published</string>
+
+    <string name="edit_profile">Edit profile</string>
+    <string name="save">Save</string>
+    <string name="display_name">Display name</string>
+    <string name="remove_image">Remove image</string>
+    <string name="edit_post">Edit post</string>
+    <string name="delete_post">Delete post</string>
+    <string name="confirm_delete_post">Delete this post?</string>
+    <string name="profile_updated">Profile updated</string>
+    <string name="yes">Yes</string>
+    <string name="cancel">Cancel</string>
+
 </resources>

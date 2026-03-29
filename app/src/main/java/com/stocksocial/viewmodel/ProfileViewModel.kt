@@ -1,5 +1,6 @@
 package com.stocksocial.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Post
@@ -20,6 +21,15 @@ class ProfileViewModel(
 
     private val _userPostsState = MutableStateFlow(UiState<List<Post>>())
     val userPostsState: StateFlow<UiState<List<Post>>> = _userPostsState.asStateFlow()
+
+    private val _profileUpdateBusy = MutableStateFlow(false)
+    val profileUpdateBusy: StateFlow<Boolean> = _profileUpdateBusy.asStateFlow()
+
+    private val _profileUpdateError = MutableStateFlow<String?>(null)
+    val profileUpdateError: StateFlow<String?> = _profileUpdateError.asStateFlow()
+
+    private val _profileUpdated = MutableStateFlow(false)
+    val profileUpdated: StateFlow<Boolean> = _profileUpdated.asStateFlow()
 
     fun loadProfile() {
         viewModelScope.launch {
@@ -47,5 +57,30 @@ class ProfileViewModel(
                 }
             }
         }
+    }
+
+    fun updateProfile(displayName: String, photoUri: Uri?) {
+        viewModelScope.launch {
+            _profileUpdateError.value = null
+            _profileUpdateBusy.value = true
+            when (val result = profileRepository.updateProfile(displayName, photoUri)) {
+                is RepositoryResult.Success -> {
+                    _profileUpdated.value = true
+                    loadProfile()
+                }
+                is RepositoryResult.Error -> {
+                    _profileUpdateError.value = result.message
+                }
+            }
+            _profileUpdateBusy.value = false
+        }
+    }
+
+    fun consumeProfileUpdated() {
+        _profileUpdated.value = false
+    }
+
+    fun consumeProfileUpdateError() {
+        _profileUpdateError.value = null
     }
 }

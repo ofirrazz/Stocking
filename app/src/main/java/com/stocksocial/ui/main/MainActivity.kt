@@ -37,8 +37,8 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav = destination.id in setOf(
                 R.id.feedFragment,
-                R.id.stocksFragment,
-                R.id.articlesFragment,
+                R.id.portfolioFragment,
+                R.id.notificationsFragment,
                 R.id.profileFragment
             )
             binding.bottomNavigation.visibility = if (showBottomNav) View.VISIBLE else View.GONE

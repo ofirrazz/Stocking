@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -24,8 +23,7 @@ class ArticlesFragment : Fragment() {
     private val viewModel: ArticlesViewModel by viewModels { appViewModelFactory }
     private val articlesAdapter = ArticlesAdapter { article ->
         findNavController().navigate(
-            R.id.action_articlesFragment_to_articleDetailsFragment,
-            bundleOf("articleId" to article.id)
+            ArticlesFragmentDirections.actionArticlesFragmentToArticleDetailsFragment(article.id)
         )
     }
     private var allArticles = emptyList<Article>()
@@ -53,6 +51,8 @@ class ArticlesFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.articlesState.collect { state ->
+                    binding.articlesLoadingProgress.visibility =
+                        if (state.isLoading) View.VISIBLE else View.GONE
                     allArticles = state.data.orEmpty()
                     applyFilter(getSelectedCategory())
                 }

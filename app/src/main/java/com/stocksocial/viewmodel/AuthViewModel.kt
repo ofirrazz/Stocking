@@ -1,8 +1,6 @@
 package com.stocksocial.viewmodel
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.User
 import com.stocksocial.repository.AuthRepository
@@ -18,7 +16,6 @@ class AuthViewModel(
 
     private val _authState = MutableStateFlow(UiState<AuthUiModel>())
     val authState: StateFlow<UiState<AuthUiModel>> = _authState.asStateFlow()
-    val authStateLive: LiveData<UiState<AuthUiModel>> = _authState.asLiveData()
 
     fun login(email: String, password: String) {
         viewModelScope.launch {

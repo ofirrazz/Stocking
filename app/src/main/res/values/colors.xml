@@ -1,21 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Figma / luxury dark palette (SocialStock spec) -->
+    <color name="primary_gold">#FFC9B17A</color>
+    <color name="accent_gold">#FFD4AF37</color>
+    <color name="silver">#FFA8A9AD</color>
+    <color name="success">#FF4A7C59</color>
+    <color name="destructive">#FFB8405E</color>
+    <color name="background">#FF0F1014</color>
+    <color name="surface_card">#FF1A1B21</color>
+    <color name="border">#FF2A2B31</color>
+    <color name="text_primary">#FFE8E9ED</color>
+    <color name="text_muted">#FFA1A2A6</color>
+    <color name="primary_gold_overlay">#1AC9B17A</color>
+    <color name="surface_chip">#FF22232A</color>
+
+    <color name="chart_1">#FFC9B17A</color>
+    <color name="chart_2">#FFA8A9AD</color>
+    <color name="chart_3">#FF4A7C59</color>
+    <color name="chart_4">#FFB8405E</color>
+    <color name="chart_5">#FFD4AF37</color>
+
+    <!-- Layouts קיימים — שמות legacy מצביעים על אותם טוקנים -->
+    <color name="feed_background">@color/background</color>
+    <color name="feed_card_background">@color/surface_card</color>
+    <color name="feed_card_stroke">@color/border</color>
+    <color name="feed_chip_background">@color/surface_chip</color>
+    <color name="feed_text_primary">@color/text_primary</color>
+    <color name="feed_text_secondary">@color/text_muted</color>
+    <color name="feed_text_muted">@color/text_muted</color>
+    <color name="feed_accent_green">@color/success</color>
+    <color name="feed_accent_red">@color/destructive</color>
+
+    <color name="nav_item_color">@color/primary_gold</color>
+
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="nav_item_color">#FF1A73E8</color>
-
-    <color name="feed_background">#0D1117</color>
-    <color name="feed_card_background">#151B24</color>
-    <color name="feed_card_stroke">#242D3A</color>
-    <color name="feed_chip_background">#1D2633</color>
-    <color name="feed_text_primary">#E9EEF7</color>
-    <color name="feed_text_secondary">#A9B4C4</color>
-    <color name="feed_text_muted">#7E8A9B</color>
-    <color name="feed_accent_green">#3DDC97</color>
-    <color name="feed_accent_red">#FF6B6B</color>
 </resources>

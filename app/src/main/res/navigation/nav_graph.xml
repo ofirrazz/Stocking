@@ -57,18 +57,42 @@
     </fragment>
 
     <fragment
+        android:id="@+id/portfolioFragment"
+        android:name="com.stocksocial.ui.portfolio.PortfolioFragment"
+        android:label="@string/portfolio" />
+
+    <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="com.stocksocial.ui.notifications.NotificationsFragment"
+        android:label="@string/notifications" />
+
+    <fragment
         android:id="@+id/profileFragment"
         android:name="com.stocksocial.ui.profile.ProfileFragment"
         android:label="@string/profile">
         <action
             android:id="@+id/action_profileFragment_to_createPostFragment"
             app:destination="@id/createPostFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_editProfileFragment"
+            app:destination="@id/editProfileFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/createPostFragment"
         android:name="com.stocksocial.ui.post.CreatePostFragment"
-        android:label="@string/create_post" />
+        android:label="@string/create_post">
+        <argument
+            android:name="postId"
+            app:argType="string"
+            android:defaultValue="@null"
+            app:nullable="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/editProfileFragment"
+        android:name="com.stocksocial.ui.profile.EditProfileFragment"
+        android:label="@string/edit_profile" />
 
     <fragment
         android:id="@+id/postDetailsFragment"

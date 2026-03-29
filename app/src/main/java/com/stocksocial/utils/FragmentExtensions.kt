@@ -12,6 +12,5 @@ val Fragment.appViewModelFactory: AppViewModelFactory
         authRepository = appContainer.authRepository,
         feedRepository = appContainer.feedRepository,
         profileRepository = appContainer.profileRepository,
-        articlesRepository = appContainer.articlesRepository,
-        watchlistRepository = appContainer.watchlistRepository
+        articlesRepository = appContainer.articlesRepository
     )

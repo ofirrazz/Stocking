@@ -159,6 +159,34 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/ownerPostActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="end"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/editPostButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/edit_post"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="@color/feed_text_secondary" />
+
+            <ImageButton
+                android:id="@+id/deletePostButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/delete_post"
+                android:src="@android:drawable/ic_menu_delete"
+                app:tint="@color/feed_accent_red" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"

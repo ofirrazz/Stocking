@@ -35,6 +35,18 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.registerToolbar.setNavigationOnClickListener {
+            findNavController().popBackStack()
+        }
+
+        binding.googleSignupButton.setOnClickListener {
+            Toast.makeText(requireContext(), R.string.coming_soon, Toast.LENGTH_SHORT).show()
+        }
+
+        binding.goToLoginText.setOnClickListener {
+            findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.authState.collect { state ->
@@ -58,6 +70,10 @@ class RegisterFragment : Fragment() {
 
             if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(requireContext(), R.string.fill_register_fields, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (password.length < 8) {
+                Toast.makeText(requireContext(), R.string.register_password_too_short, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             viewModel.register(username, email, password)

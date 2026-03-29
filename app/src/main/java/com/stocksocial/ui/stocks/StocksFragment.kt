@@ -68,7 +68,7 @@ class StocksFragment : Fragment() {
             }
         }
 
-        viewModel.loadMockStocks()
+        viewModel.loadStocks()
     }
 
     override fun onDestroyView() {

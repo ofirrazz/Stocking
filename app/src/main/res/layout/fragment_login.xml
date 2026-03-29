@@ -3,14 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/feed_background">
+    android:background="@drawable/bg_screen_radial">
 
     <LinearLayout
         android:id="@+id/loginHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="36dp"
         android:layout_marginEnd="24dp"
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
@@ -20,17 +20,17 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/login"
-            android:textColor="@color/feed_text_primary"
-            android:textSize="32sp"
-            android:textStyle="bold" />
+            android:letterSpacing="-0.02"
+            android:text="@string/login_welcome_back"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="@string/login_subtitle"
-            android:textColor="@color/feed_text_secondary"
+            android:layout_marginTop="8dp"
+            android:text="@string/login_sign_in_continue"
+            android:textColor="@color/text_muted"
             android:textSize="14sp" />
     </LinearLayout>
 
@@ -41,77 +41,82 @@
         android:layout_marginStart="20dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="20dp"
-        app:cardBackgroundColor="@color/feed_card_background"
-        app:cardCornerRadius="20dp"
+        app:cardBackgroundColor="@color/surface_card"
+        app:cardCornerRadius="16dp"
         app:cardElevation="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/loginHeader"
-        app:strokeColor="@color/feed_card_stroke"
+        app:strokeColor="@color/border"
         app:strokeWidth="1dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="18dp">
+            android:paddingStart="28dp"
+            android:paddingTop="28dp"
+            android:paddingEnd="28dp"
+            android:paddingBottom="24dp">
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/username_or_email"
-                app:boxBackgroundColor="@color/feed_chip_background"
-                app:boxCornerRadiusBottomEnd="14dp"
-                app:boxCornerRadiusBottomStart="14dp"
-                app:boxCornerRadiusTopEnd="14dp"
-                app:boxCornerRadiusTopStart="14dp"
-                app:boxStrokeColor="@color/feed_card_stroke"
-                app:hintTextColor="@color/feed_text_muted">
+                app:boxBackgroundColor="@color/surface_chip"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/text_input_stroke"
+                app:hintTextColor="@color/text_muted">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/emailInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textEmailAddress"
-                    android:textColor="@color/feed_text_primary"
-                    android:textColorHint="@color/feed_text_muted" />
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:hint="@string/password"
-                app:boxBackgroundColor="@color/feed_chip_background"
-                app:boxCornerRadiusBottomEnd="14dp"
-                app:boxCornerRadiusBottomStart="14dp"
-                app:boxCornerRadiusTopEnd="14dp"
-                app:boxCornerRadiusTopStart="14dp"
-                app:boxStrokeColor="@color/feed_card_stroke"
+                app:boxBackgroundColor="@color/surface_chip"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/text_input_stroke"
                 app:endIconMode="password_toggle"
-                app:hintTextColor="@color/feed_text_muted">
+                app:endIconTint="@color/text_muted"
+                app:hintTextColor="@color/text_muted">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/passwordInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
-                    android:textColor="@color/feed_text_primary"
-                    android:textColorHint="@color/feed_text_muted" />
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/loginButton"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="18dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="24dp"
                 android:text="@string/login"
                 android:textAllCaps="false"
-                android:textStyle="bold"
-                app:backgroundTint="@color/nav_item_color"
-                app:cornerRadius="14dp" />
+                android:textColor="@color/background"
+                android:textSize="16sp"
+                app:backgroundTint="@color/primary_gold"
+                app:cornerRadius="12dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/goToRegisterButton"
@@ -119,10 +124,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="10dp"
-                android:text="@string/register"
+                android:layout_marginTop="12dp"
+                android:text="@string/login_no_account_register"
                 android:textAllCaps="false"
-                android:textColor="@color/feed_text_secondary" />
+                android:textColor="@color/primary_gold" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
