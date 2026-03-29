@@ -7,18 +7,19 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentRegisterBinding
-import com.stocksocial.utils.appContainer
-import com.stocksocial.viewmodel.AppViewModelFactory
+import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels {
-        AppViewModelFactory(authRepository = appContainer.authRepository)
-    }
+    private val viewModel: AuthViewModel by viewModels { appViewModelFactory }
     private var _binding: FragmentRegisterBinding? = null
     private val binding get() = _binding!!
 
@@ -34,16 +35,32 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.authState.collect { state ->
+                    binding.registerButton.isEnabled = !state.isLoading
+                    state.errorMessage?.let { msg ->
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+                    }
+                    if (state.data?.isAuthenticated == true &&
+                        findNavController().currentDestination?.id == R.id.registerFragment
+                    ) {
+                        findNavController().navigate(R.id.action_registerFragment_to_feedFragment)
+                    }
+                }
+            }
+        }
+
         binding.registerButton.setOnClickListener {
             val username = binding.usernameInput.text?.toString()?.trim().orEmpty()
             val email = binding.emailInput.text?.toString()?.trim().orEmpty()
             val password = binding.passwordInput.text?.toString().orEmpty()
 
             if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(requireContext(), "Fill all fields", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.fill_register_fields, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            findNavController().navigate(R.id.feedFragment)
+            viewModel.register(username, email, password)
         }
     }
 

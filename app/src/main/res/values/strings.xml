@@ -41,6 +41,8 @@
     <string name="login">Login</string>
     <string name="login_subtitle">Welcome back to your stock community</string>
     <string name="register">Register</string>
+    <string name="logout">Logout</string>
+    <string name="my_posts">My Posts</string>
     <string name="create_post">Create Post</string>
     <string name="post_details">Post Details</string>
     <string name="article_details">Article Details</string>
@@ -53,4 +55,10 @@
     <string name="what_is_on_your_mind">What is on your mind?</string>
     <string name="post_details_placeholder">Post content placeholder</string>
     <string name="article_details_placeholder">Article content placeholder</string>
+    <string name="post_image">Post image</string>
+    <string name="pick_image">Pick image</string>
+    <string name="fill_login_fields">Enter email and password</string>
+    <string name="fill_register_fields">Fill all fields</string>
+    <string name="post_needs_content">Add text or an image</string>
+    <string name="published_ok">Post published</string>
 </resources>

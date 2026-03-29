@@ -10,5 +10,6 @@ data class Post(
     val stockSymbol: String? = null,
     val stockPrice: Double? = null,
     val imageUrl: String? = null,
-    val videoUrl: String? = null
+    val videoUrl: String? = null,
+    val localImagePath: String? = null
 )

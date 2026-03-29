@@ -12,16 +12,13 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stocksocial.databinding.FragmentFeedBinding
 import com.stocksocial.ui.adapters.FeedAdapter
-import com.stocksocial.utils.appContainer
-import com.stocksocial.viewmodel.AppViewModelFactory
+import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.FeedViewModel
 import kotlinx.coroutines.launch
 
 class FeedFragment : Fragment() {
 
-    private val viewModel: FeedViewModel by viewModels {
-        AppViewModelFactory(feedRepository = appContainer.feedRepository)
-    }
+    private val viewModel: FeedViewModel by viewModels { appViewModelFactory }
     private val feedAdapter = FeedAdapter()
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
@@ -50,7 +47,12 @@ class FeedFragment : Fragment() {
             }
         }
 
-        viewModel.refreshMockFeed()
+        viewModel.loadFeed()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadFeed()
     }
 
     override fun onDestroyView() {

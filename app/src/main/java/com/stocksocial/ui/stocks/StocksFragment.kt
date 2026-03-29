@@ -15,16 +15,13 @@ import com.stocksocial.ui.adapters.MarketIndexAdapter
 import com.stocksocial.ui.adapters.TopSignalsAdapter
 import com.stocksocial.ui.adapters.TrendingStocksAdapter
 import com.stocksocial.ui.adapters.WatchlistAdapter
-import com.stocksocial.utils.appContainer
-import com.stocksocial.viewmodel.AppViewModelFactory
+import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.StocksViewModel
 import kotlinx.coroutines.launch
 
 class StocksFragment : Fragment() {
 
-    private val viewModel: StocksViewModel by viewModels {
-        AppViewModelFactory(watchlistRepository = appContainer.watchlistRepository)
-    }
+    private val viewModel: StocksViewModel by viewModels { appViewModelFactory }
     private val marketIndexAdapter = MarketIndexAdapter()
     private val trendingStocksAdapter = TrendingStocksAdapter()
     private val watchlistAdapter = WatchlistAdapter()

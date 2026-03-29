@@ -9,9 +9,15 @@ import com.stocksocial.model.Post
 import java.text.NumberFormat
 import java.util.Locale
 
-class UserPostsAdapter(
-    private val items: List<Post> = emptyList()
-) : RecyclerView.Adapter<UserPostsAdapter.UserPostViewHolder>() {
+class UserPostsAdapter : RecyclerView.Adapter<UserPostsAdapter.UserPostViewHolder>() {
+
+    private val items = mutableListOf<Post>()
+
+    fun submitList(posts: List<Post>) {
+        items.clear()
+        items.addAll(posts)
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserPostViewHolder {
         val binding = ItemProfilePostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -35,7 +41,8 @@ class UserPostsAdapter(
                 stockInfoContainer.visibility = View.GONE
             }
 
-            imagePreviewContainer.visibility = if (item.imageUrl != null) View.VISIBLE else View.GONE
+            val hasImage = !item.imageUrl.isNullOrBlank() || !item.localImagePath.isNullOrBlank()
+            imagePreviewContainer.visibility = if (hasImage) View.VISIBLE else View.GONE
             videoPreviewContainer.visibility = if (item.videoUrl != null) View.VISIBLE else View.GONE
         }
     }

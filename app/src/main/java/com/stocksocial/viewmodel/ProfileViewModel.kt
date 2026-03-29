@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
-    private val profileRepository: ProfileRepository? = null
+    private val profileRepository: ProfileRepository
 ) : ViewModel() {
 
     private val _profileState = MutableStateFlow(UiState<User>())
@@ -22,31 +22,29 @@ class ProfileViewModel(
     val userPostsState: StateFlow<UiState<List<Post>>> = _userPostsState.asStateFlow()
 
     fun loadProfile() {
-        val repository = profileRepository ?: run {
-            _profileState.value = UiState(errorMessage = "ProfileRepository is not attached")
-            return
-        }
-
         viewModelScope.launch {
             _profileState.value = UiState(isLoading = true)
-            when (val result = repository.getProfile()) {
-                is RepositoryResult.Success -> _profileState.value = UiState(data = result.data)
-                is RepositoryResult.Error -> _profileState.value = UiState(errorMessage = result.message)
+            when (val result = profileRepository.getProfile()) {
+                is RepositoryResult.Success -> {
+                    _profileState.value = UiState(data = result.data)
+                }
+                is RepositoryResult.Error -> {
+                    _profileState.value = UiState(errorMessage = result.message)
+                }
             }
         }
     }
 
     fun loadMyPosts() {
-        val repository = profileRepository ?: run {
-            _userPostsState.value = UiState(errorMessage = "ProfileRepository is not attached")
-            return
-        }
-
         viewModelScope.launch {
             _userPostsState.value = UiState(isLoading = true)
-            when (val result = repository.getMyPosts()) {
-                is RepositoryResult.Success -> _userPostsState.value = UiState(data = result.data)
-                is RepositoryResult.Error -> _userPostsState.value = UiState(errorMessage = result.message)
+            when (val result = profileRepository.getMyPosts()) {
+                is RepositoryResult.Success -> {
+                    _userPostsState.value = UiState(data = result.data)
+                }
+                is RepositoryResult.Error -> {
+                    _userPostsState.value = UiState(errorMessage = result.message)
+                }
             }
         }
     }
