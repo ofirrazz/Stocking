@@ -63,7 +63,7 @@
                 android:contentDescription="@string/profile_post_image_preview"
                 android:scaleType="centerCrop"
                 android:src="@android:drawable/ic_menu_gallery"
-                android:tint="@color/feed_text_secondary" />
+                app:tint="@color/feed_text_secondary" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -92,7 +92,7 @@
                 android:background="@drawable/bg_profile_circle"
                 android:padding="12dp"
                 android:src="@android:drawable/ic_media_play"
-                android:tint="@color/feed_text_primary" />
+                app:tint="@color/feed_text_primary" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -177,7 +177,7 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@android:drawable/btn_star_big_off"
-                    android:tint="@color/feed_text_secondary" />
+                    app:tint="@color/feed_text_secondary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -200,7 +200,7 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@android:drawable/ic_menu_edit"
-                    android:tint="@color/feed_text_secondary" />
+                    app:tint="@color/feed_text_secondary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -222,7 +222,7 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@android:drawable/ic_menu_share"
-                    android:tint="@color/feed_text_secondary" />
+                    app:tint="@color/feed_text_secondary" />
 
                 <TextView
                     android:layout_width="wrap_content"
