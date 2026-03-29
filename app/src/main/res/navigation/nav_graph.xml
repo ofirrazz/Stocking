@@ -73,6 +73,10 @@
     <fragment
         android:id="@+id/articleDetailsFragment"
         android:name="com.stocksocial.ui.articles.ArticleDetailsFragment"
-        android:label="@string/article_details" />
+        android:label="@string/article_details">
+        <argument
+            android:name="articleId"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

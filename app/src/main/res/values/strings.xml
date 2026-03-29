@@ -12,6 +12,12 @@
     <string name="top_signals">Top Signals</string>
     <string name="top_signals_subtitle">TradingView-inspired opportunities from momentum and structure</string>
     <string name="articles">Articles</string>
+    <string name="articles_subtitle">Market stories, trends and research insights</string>
+    <string name="category_all">All</string>
+    <string name="category_earnings">Earnings</string>
+    <string name="category_economics">Economics</string>
+    <string name="category_technology">Technology</string>
+    <string name="category_automotive">Automotive</string>
     <string name="profile">Profile</string>
     <string name="profile_full_name">Ofir Raz</string>
     <string name="profile_username">@ofirrazz</string>
@@ -38,6 +44,7 @@
     <string name="create_post">Create Post</string>
     <string name="post_details">Post Details</string>
     <string name="article_details">Article Details</string>
+    <string name="article_author_format">By %1$s</string>
     <string name="email">Email</string>
     <string name="username_or_email">Username or Email</string>
     <string name="password">Password</string>
