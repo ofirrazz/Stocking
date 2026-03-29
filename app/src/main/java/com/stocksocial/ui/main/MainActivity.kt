@@ -7,6 +7,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.stocksocial.R
+import com.stocksocial.StockSocialApp
 import com.stocksocial.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -24,6 +25,11 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment.navController
 
         binding.bottomNavigation.setupWithNavController(navController)
+
+        val isLoggedIn = (application as StockSocialApp).appContainer.authRepository.isLoggedIn()
+        if (isLoggedIn && navController.currentDestination?.id == R.id.loginFragment) {
+            navController.navigate(R.id.feedFragment)
+        }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav = destination.id in setOf(

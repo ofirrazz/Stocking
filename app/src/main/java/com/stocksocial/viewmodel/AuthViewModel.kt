@@ -30,7 +30,7 @@ class AuthViewModel(
                     _authState.value = UiState(
                         data = AuthUiModel(
                             isAuthenticated = true,
-                            user = result.data.user
+                            user = result.data
                         )
                     )
                 }
@@ -54,7 +54,7 @@ class AuthViewModel(
                     _authState.value = UiState(
                         data = AuthUiModel(
                             isAuthenticated = true,
-                            user = result.data.user
+                            user = result.data
                         )
                     )
                 }
@@ -69,6 +69,25 @@ class AuthViewModel(
         authRepository?.logout()
         _authState.value = UiState(
             data = AuthUiModel(isAuthenticated = false, user = null)
+        )
+    }
+
+    fun checkCurrentSession() {
+        val currentUser = authRepository?.getCurrentUser()
+        if (currentUser != null) {
+            _authState.value = UiState(
+                data = AuthUiModel(
+                    isAuthenticated = true,
+                    user = currentUser
+                )
+            )
+            return
+        }
+        _authState.value = UiState(
+            data = AuthUiModel(
+                isAuthenticated = false,
+                user = null
+            )
         )
     }
 }

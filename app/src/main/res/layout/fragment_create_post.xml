@@ -20,6 +20,14 @@
         android:hint="@string/what_is_on_your_mind"
         android:inputType="textMultiLine" />
 
+    <EditText
+        android:id="@+id/imageUrlInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="@string/image_url_optional"
+        android:inputType="textUri" />
+
     <Button
         android:id="@+id/publishPostButton"
         android:layout_width="match_parent"

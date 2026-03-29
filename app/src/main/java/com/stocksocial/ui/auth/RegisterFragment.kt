@@ -7,12 +7,16 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentRegisterBinding
 import com.stocksocial.utils.appContainer
 import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
 
@@ -34,6 +38,20 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.authState.collect { state ->
+                    if (state.data?.isAuthenticated == true) {
+                        findNavController().navigate(R.id.feedFragment)
+                    } else if (!state.errorMessage.isNullOrEmpty()) {
+                        Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        viewModel.checkCurrentSession()
+
         binding.registerButton.setOnClickListener {
             val username = binding.usernameInput.text?.toString()?.trim().orEmpty()
             val email = binding.emailInput.text?.toString()?.trim().orEmpty()
@@ -43,7 +61,7 @@ class RegisterFragment : Fragment() {
                 Toast.makeText(requireContext(), "Fill all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            findNavController().navigate(R.id.feedFragment)
+            viewModel.register(username, email, password)
         }
     }
 

@@ -50,6 +50,10 @@
     <string name="password">Password</string>
     <string name="username">Username</string>
     <string name="publish">Publish</string>
+    <string name="image_url_optional">Image URL (optional)</string>
+    <string name="logout">Logout</string>
+    <string name="post_deleted">Post deleted</string>
+    <string name="post_published">Post published</string>
     <string name="what_is_on_your_mind">What is on your mind?</string>
     <string name="post_details_placeholder">Post content placeholder</string>
     <string name="article_details_placeholder">Article content placeholder</string>

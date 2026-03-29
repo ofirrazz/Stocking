@@ -7,12 +7,16 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentLoginBinding
 import com.stocksocial.utils.appContainer
 import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
 
@@ -34,6 +38,20 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.authState.collect { state ->
+                    if (state.data?.isAuthenticated == true) {
+                        findNavController().navigate(R.id.feedFragment)
+                    } else if (!state.errorMessage.isNullOrEmpty()) {
+                        Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        viewModel.checkCurrentSession()
+
         binding.loginButton.setOnClickListener {
             val emailOrUsername = binding.emailInput.text?.toString()?.trim().orEmpty()
             val password = binding.passwordInput.text?.toString().orEmpty()
@@ -42,7 +60,7 @@ class LoginFragment : Fragment() {
                 Toast.makeText(requireContext(), "Fill username/email and password", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            findNavController().navigate(R.id.feedFragment)
+            viewModel.login(emailOrUsername, password)
         }
 
         binding.goToRegisterButton.setOnClickListener {

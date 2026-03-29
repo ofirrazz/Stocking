@@ -1,95 +1,83 @@
 package com.stocksocial.repository
 
-import com.stocksocial.model.auth.AuthResponse
-import com.stocksocial.model.auth.LoginRequest
-import com.stocksocial.model.auth.RefreshTokenRequest
-import com.stocksocial.model.auth.RefreshTokenResponse
-import com.stocksocial.model.auth.RegisterRequest
-import com.stocksocial.network.ApiService
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
+import com.stocksocial.model.User
 import com.stocksocial.utils.TokenManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class AuthRepository(
-    private val apiService: ApiService,
     private val tokenManager: TokenManager
 ) {
-
-    suspend fun login(
-        email: String,
-        password: String
-    ): RepositoryResult<AuthResponse> = withContext(Dispatchers.IO) {
-        runCatching {
-            apiService.login(LoginRequest(email = email, password = password))
-        }.fold(
-            onSuccess = { response ->
-                val body = response.body()
-                if (response.isSuccessful && body != null) {
-                    tokenManager.saveToken(body.accessToken)
-                    RepositoryResult.Success(body)
-                } else {
-                    RepositoryResult.Error("Login failed: ${response.code()}")
-                }
-            },
-            onFailure = { throwable ->
-                RepositoryResult.Error("Login request failed", throwable)
-            }
-        )
-    }
+    private val firebaseAuth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
     suspend fun register(
         username: String,
         email: String,
         password: String
-    ): RepositoryResult<AuthResponse> = withContext(Dispatchers.IO) {
+    ): RepositoryResult<User> = withContext(Dispatchers.IO) {
         runCatching {
-            apiService.register(
-                RegisterRequest(
-                    username = username,
-                    email = email,
-                    password = password
-                )
-            )
+            val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+            val firebaseUser = authResult.user ?: error("Firebase user is null")
+            val profileRequest = UserProfileChangeRequest.Builder()
+                .setDisplayName(username)
+                .build()
+            firebaseUser.updateProfile(profileRequest).await()
+            saveSession(firebaseUser)
+            firebaseUser.toDomainUser()
         }.fold(
-            onSuccess = { response ->
-                val body = response.body()
-                if (response.isSuccessful && body != null) {
-                    tokenManager.saveToken(body.accessToken)
-                    RepositoryResult.Success(body)
-                } else {
-                    RepositoryResult.Error("Registration failed: ${response.code()}")
-                }
-            },
-            onFailure = { throwable ->
-                RepositoryResult.Error("Registration request failed", throwable)
-            }
+            onSuccess = { RepositoryResult.Success(it) },
+            onFailure = { RepositoryResult.Error(it.message ?: "Registration failed", it) }
         )
     }
 
-    suspend fun refreshToken(
-        refreshToken: String
-    ): RepositoryResult<RefreshTokenResponse> = withContext(Dispatchers.IO) {
+    suspend fun login(
+        email: String,
+        password: String
+    ): RepositoryResult<User> = withContext(Dispatchers.IO) {
         runCatching {
-            apiService.refreshToken(RefreshTokenRequest(refreshToken = refreshToken))
+            val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
+            val firebaseUser = authResult.user ?: error("Firebase user is null")
+            saveSession(firebaseUser)
+            firebaseUser.toDomainUser()
         }.fold(
-            onSuccess = { response ->
-                val body = response.body()
-                if (response.isSuccessful && body != null) {
-                    tokenManager.saveToken(body.accessToken)
-                    RepositoryResult.Success(body)
-                } else {
-                    RepositoryResult.Error("Token refresh failed: ${response.code()}")
-                }
-            },
-            onFailure = { throwable ->
-                RepositoryResult.Error("Token refresh request failed", throwable)
-            }
+            onSuccess = { RepositoryResult.Success(it) },
+            onFailure = { RepositoryResult.Error(it.message ?: "Login failed", it) }
         )
     }
 
-    fun getSavedToken(): String? = tokenManager.getToken()
+    fun getCurrentUser(): User? {
+        val user = runCatching { firebaseAuth.currentUser }.getOrNull() ?: return null
+        return user.toDomainUser()
+    }
+
+    fun isLoggedIn(): Boolean = firebaseAuth.currentUser != null || tokenManager.isLoggedIn()
+    fun getCurrentUserId(): String = getCurrentUser()?.id ?: tokenManager.getUserId() ?: "local-user"
+    fun getCurrentUsername(): String = getCurrentUser()?.username ?: tokenManager.getUsername() ?: "StockSocial User"
 
     fun logout() {
+        firebaseAuth.signOut()
         tokenManager.clearToken()
+    }
+
+    private suspend fun saveSession(firebaseUser: FirebaseUser) {
+        val idToken = firebaseUser.getIdToken(false).await().token ?: "firebase-${firebaseUser.uid}"
+        tokenManager.saveSession(
+            token = idToken,
+            userId = firebaseUser.uid,
+            username = firebaseUser.displayName ?: firebaseUser.email ?: "StockSocial User"
+        )
+    }
+
+    private fun FirebaseUser.toDomainUser(): User {
+        return User(
+            id = uid,
+            username = displayName ?: email?.substringBefore("@").orEmpty(),
+            email = email.orEmpty(),
+            avatarUrl = photoUrl?.toString()
+        )
     }
 }
