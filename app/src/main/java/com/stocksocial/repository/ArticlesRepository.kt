@@ -4,6 +4,7 @@ import android.content.Context
 import com.stocksocial.BuildConfig
 import com.stocksocial.data.local.ArticleDao
 import com.stocksocial.model.Article
+import com.stocksocial.model.cache.CachedArticleEntity
 import com.stocksocial.model.cache.toArticle
 import com.stocksocial.model.cache.toEntity
 import com.stocksocial.network.ApiService
@@ -27,40 +28,17 @@ class ArticlesRepository(
             if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
                 return@withContext cachedOrError("Add FINNHUB_TOKEN in local.properties (see README).")
             }
-            val cal = Calendar.getInstance()
-            val toDate = cal.time
-            cal.add(Calendar.DAY_OF_YEAR, -30)
-            val fromDate = cal.time
-            val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            val fromStr = fmt.format(fromDate)
-            val toStr = fmt.format(toDate)
             try {
-                val response = apiService.getCompanyNews(
-                    symbol = symbol,
-                    from = fromStr,
-                    to = toStr
-                )
+                val range = buildDateRange()
+                val response = apiService.getCompanyNews(symbol = symbol, from = range.first, to = range.second)
                 val body = response.body()
                 if (!response.isSuccessful || body == null) {
                     return@withContext cachedOrError("News request failed: ${response.code()}")
                 }
-                val articles = body.map { it.toArticle() }
-                val entities = articles.map { it.toEntity(null) }
-                articleDao.replaceAll(entities)
-                entities.forEach { entity ->
-                    val url = entity.imageUrl ?: return@forEach
-                    val path = ImageCacheDownloader.download(
-                        appContext,
-                        url,
-                        "article_images",
-                        entity.id.replace("/", "_") + ".img"
-                    )
-                    if (path != null) {
-                        articleDao.insert(entity.copy(localImagePath = path))
-                    }
-                }
-                val fromDb = articleDao.getAll().map { it.toArticle() }
-                RepositoryResult.Success(fromDb)
+                val entities = body.map { it.toArticle().toEntity(null) }
+                replaceCache(entities)
+                hydrateArticleImages(entities)
+                RepositoryResult.Success(getCachedArticles())
             } catch (e: Exception) {
                 cachedOrError(e.message ?: "Network error", e)
             }
@@ -80,11 +58,41 @@ class ArticlesRepository(
         message: String,
         throwable: Throwable? = null
     ): RepositoryResult<List<Article>> {
-        val cached = articleDao.getAll().map { it.toArticle() }
+        val cached = getCachedArticles()
         return if (cached.isNotEmpty()) {
             RepositoryResult.Success(cached)
         } else {
             RepositoryResult.Error(message, throwable)
         }
+    }
+
+    private fun buildDateRange(): Pair<String, String> {
+        val calendar = Calendar.getInstance()
+        val toDate = calendar.time
+        calendar.add(Calendar.DAY_OF_YEAR, -30)
+        val fromDate = calendar.time
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        return formatter.format(fromDate) to formatter.format(toDate)
+    }
+
+    private suspend fun replaceCache(entities: List<CachedArticleEntity>) {
+        articleDao.replaceAll(entities)
+    }
+
+    private suspend fun hydrateArticleImages(entities: List<CachedArticleEntity>) {
+        entities.forEach { entity ->
+            val url = entity.imageUrl ?: return@forEach
+            val path = ImageCacheDownloader.download(
+                appContext,
+                url,
+                "article_images",
+                entity.id.replace("/", "_") + ".img"
+            ) ?: return@forEach
+            articleDao.insert(entity.copy(localImagePath = path))
+        }
+    }
+
+    suspend fun getCachedArticles(): List<Article> {
+        return articleDao.getAll().map { it.toArticle() }
     }
 }

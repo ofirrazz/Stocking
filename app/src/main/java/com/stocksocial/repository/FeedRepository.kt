@@ -9,6 +9,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.stocksocial.data.local.PostDao
 import com.stocksocial.data.remote.toCachedPostEntity
 import com.stocksocial.model.Post
+import com.stocksocial.model.cache.CachedPostEntity
 import com.stocksocial.model.cache.toPost
 import com.stocksocial.utils.ImageCacheDownloader
 import kotlinx.coroutines.Dispatchers
@@ -26,42 +27,12 @@ class FeedRepository(
 
     suspend fun getFeedPosts(): RepositoryResult<List<Post>> = withContext(Dispatchers.IO) {
         try {
-            val snapshot = firestore.collection("posts")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(50)
-                .get()
-                .await()
-
-            val baseEntities = snapshot.documents.mapNotNull { doc ->
-                val existing = postDao.getById(doc.id)
-                doc.toCachedPostEntity(existing?.localImagePath)
-            }
-            postDao.upsertAll(baseEntities)
-
-            val posts = baseEntities.map { entity ->
-                var local = entity.localImagePath
-                val url = entity.imageUrl
-                if (local == null && !url.isNullOrBlank()) {
-                    local = ImageCacheDownloader.download(
-                        appContext,
-                        url,
-                        "post_images",
-                        entity.id.replace("/", "_") + ".img"
-                    )
-                    if (local != null) {
-                        val updated = entity.copy(localImagePath = local)
-                        postDao.upsert(updated)
-                        updated.toPost()
-                    } else {
-                        entity.toPost()
-                    }
-                } else {
-                    entity.toPost()
-                }
-            }
-            RepositoryResult.Success(posts)
+            val remoteEntities = fetchRemoteEntities()
+            cacheEntities(remoteEntities)
+            val hydrated = hydrateEntitiesWithImages(remoteEntities)
+            RepositoryResult.Success(hydrated.map { it.toPost() })
         } catch (e: Exception) {
-            val cached = postDao.getAll().map { it.toPost() }
+            val cached = getCachedPosts()
             if (cached.isNotEmpty()) {
                 RepositoryResult.Success(cached)
             } else {
@@ -85,23 +56,147 @@ class FeedRepository(
                     downloadUrl = ref.downloadUrl.await().toString()
                 }
                 val doc = firestore.collection("posts").document()
-                val millis = System.currentTimeMillis()
-                val data = hashMapOf<String, Any?>(
-                    "id" to doc.id,
-                    "authorId" to user.uid,
-                    "authorUsername" to (user.displayName ?: user.email?.substringBefore("@") ?: "user"),
-                    "content" to content.trim(),
-                    "imageUrl" to downloadUrl,
-                    "createdAt" to millis,
-                    "likesCount" to 0,
-                    "commentsCount" to 0,
-                    "stockSymbol" to null,
-                    "stockPrice" to null
-                )
-                doc.set(data).await()
+                doc.set(buildPostPayload(doc.id, user.uid, user.displayName, user.email, content, downloadUrl))
+                    .await()
                 RepositoryResult.Success(Unit)
             } catch (e: Exception) {
                 RepositoryResult.Error(e.message ?: "Publish failed", e)
             }
         }
+
+    suspend fun getPostById(postId: String): RepositoryResult<Post> = withContext(Dispatchers.IO) {
+        val cached = postDao.getById(postId)?.toPost()
+        try {
+            val doc = firestore.collection("posts").document(postId).get().await()
+            val entity = doc.toCachedPostEntity(postDao.getById(postId)?.localImagePath)
+                ?: return@withContext cached?.let { RepositoryResult.Success(it) }
+                ?: RepositoryResult.Error("Post not found")
+
+            val hydrated = hydrateEntityWithLocalImage(entity)
+            postDao.upsert(hydrated)
+            RepositoryResult.Success(hydrated.toPost())
+        } catch (e: Exception) {
+            cached?.let { RepositoryResult.Success(it) }
+                ?: RepositoryResult.Error(e.message ?: "Failed to load post", e)
+        }
+    }
+
+    suspend fun updatePost(postId: String, content: String, imageUri: Uri?): RepositoryResult<Unit> =
+        withContext(Dispatchers.IO) {
+            val user = auth.currentUser
+                ?: return@withContext RepositoryResult.Error("You must be signed in")
+            if (content.isBlank() && imageUri == null) {
+                return@withContext RepositoryResult.Error("Post cannot be empty")
+            }
+            try {
+                val postRef = firestore.collection("posts").document(postId)
+                val snapshot = postRef.get().await()
+                val authorId = snapshot.getString("authorId")
+                if (authorId != user.uid) {
+                    return@withContext RepositoryResult.Error("You can edit only your own posts")
+                }
+
+                var imageUrl = snapshot.getString("imageUrl")
+                if (imageUri != null) {
+                    val ref = storage.reference.child("posts_images/${user.uid}/${UUID.randomUUID()}.jpg")
+                    ref.putFile(imageUri).await()
+                    imageUrl = ref.downloadUrl.await().toString()
+                }
+
+                postRef.update(
+                    mapOf(
+                        "content" to content.trim(),
+                        "imageUrl" to imageUrl
+                    )
+                ).await()
+
+                getPostById(postId)
+                RepositoryResult.Success(Unit)
+            } catch (e: Exception) {
+                RepositoryResult.Error(e.message ?: "Failed to update post", e)
+            }
+        }
+
+    suspend fun deletePost(postId: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val user = auth.currentUser
+            ?: return@withContext RepositoryResult.Error("You must be signed in")
+        try {
+            val postRef = firestore.collection("posts").document(postId)
+            val snapshot = postRef.get().await()
+            val authorId = snapshot.getString("authorId")
+            if (authorId != user.uid) {
+                return@withContext RepositoryResult.Error("You can delete only your own posts")
+            }
+            postRef.delete().await()
+            postDao.deleteById(postId)
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to delete post", e)
+        }
+    }
+
+    private suspend fun fetchRemoteEntities(): List<CachedPostEntity> {
+        val snapshot = firestore.collection("posts")
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(50)
+            .get()
+            .await()
+
+        return snapshot.documents.mapNotNull { doc ->
+            val existing = postDao.getById(doc.id)
+            doc.toCachedPostEntity(existing?.localImagePath)
+        }
+    }
+
+    private suspend fun cacheEntities(entities: List<CachedPostEntity>) {
+        if (entities.isNotEmpty()) {
+            postDao.upsertAll(entities)
+        }
+    }
+
+    private suspend fun hydrateEntitiesWithImages(entities: List<CachedPostEntity>): List<CachedPostEntity> {
+        return entities.map { entity -> hydrateEntityWithLocalImage(entity) }
+    }
+
+    private suspend fun hydrateEntityWithLocalImage(entity: CachedPostEntity): CachedPostEntity {
+        if (!entity.localImagePath.isNullOrBlank()) return entity
+        val remoteUrl = entity.imageUrl ?: return entity
+        val localPath = ImageCacheDownloader.download(
+            appContext,
+            remoteUrl,
+            "post_images",
+            entity.id.replace("/", "_") + ".img"
+        ) ?: return entity
+
+        val updated = entity.copy(localImagePath = localPath)
+        postDao.upsert(updated)
+        return updated
+    }
+
+    suspend fun getCachedPosts(): List<Post> {
+        return postDao.getAll().map { it.toPost() }
+    }
+
+    private fun buildPostPayload(
+        postId: String,
+        authorId: String,
+        displayName: String?,
+        email: String?,
+        content: String,
+        imageUrl: String?
+    ): HashMap<String, Any?> {
+        val authorUsername = displayName ?: email?.substringBefore("@") ?: "user"
+        return hashMapOf(
+            "id" to postId,
+            "authorId" to authorId,
+            "authorUsername" to authorUsername,
+            "content" to content.trim(),
+            "imageUrl" to imageUrl,
+            "createdAt" to System.currentTimeMillis(),
+            "likesCount" to 0,
+            "commentsCount" to 0,
+            "stockSymbol" to null,
+            "stockPrice" to null
+        )
+    }
 }

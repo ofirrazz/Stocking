@@ -21,8 +21,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/register"
+            android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
             android:textColor="@color/feed_text_primary"
-            android:textSize="32sp"
             android:textStyle="bold" />
 
         <TextView
@@ -30,8 +30,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="@string/register_subtitle"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textColor="@color/feed_text_secondary"
-            android:textSize="14sp" />
+            />
     </LinearLayout>
 
     <com.google.android.material.card.MaterialCardView
@@ -137,6 +138,16 @@
                 android:textStyle="bold"
                 app:backgroundTint="@color/nav_item_color"
                 app:cornerRadius="14dp" />
+
+            <ProgressBar
+                android:id="@+id/registerProgress"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

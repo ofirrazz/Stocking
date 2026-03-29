@@ -59,6 +59,13 @@
     <string name="article_details_placeholder">Article content placeholder</string>
     <string name="post_image">Post image</string>
     <string name="pick_image">Pick image</string>
+    <string name="update_post">Update Post</string>
+    <string name="delete_post">Delete Post</string>
+    <string name="post_updated">Post updated</string>
+    <string name="post_deleted">Post deleted</string>
+    <string name="profile_updated">Profile updated</string>
+    <string name="edit_profile_name">Edit profile name</string>
+    <string name="save">Save</string>
     <string name="fill_login_fields">Enter email and password</string>
     <string name="fill_register_fields">Fill all fields</string>
     <string name="post_needs_content">Add text or an image</string>

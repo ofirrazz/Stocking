@@ -3,21 +3,19 @@ package com.stocksocial.ui.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.stocksocial.databinding.ItemProfilePostBinding
 import com.stocksocial.model.Post
+import java.io.File
 import java.text.NumberFormat
 import java.util.Locale
 
-class UserPostsAdapter : RecyclerView.Adapter<UserPostsAdapter.UserPostViewHolder>() {
-
-    private val items = mutableListOf<Post>()
-
-    fun submitList(posts: List<Post>) {
-        items.clear()
-        items.addAll(posts)
-        notifyDataSetChanged()
-    }
+class UserPostsAdapter(
+    private val onPostClick: (Post) -> Unit
+) : ListAdapter<Post, UserPostsAdapter.UserPostViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserPostViewHolder {
         val binding = ItemProfilePostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -25,7 +23,7 @@ class UserPostsAdapter : RecyclerView.Adapter<UserPostsAdapter.UserPostViewHolde
     }
 
     override fun onBindViewHolder(holder: UserPostViewHolder, position: Int) {
-        val item = items[position]
+        val item = getItem(position)
         with(holder.binding) {
             titleText.text = item.author.username
             timeText.text = item.createdAt
@@ -43,11 +41,33 @@ class UserPostsAdapter : RecyclerView.Adapter<UserPostsAdapter.UserPostViewHolde
 
             val hasImage = !item.imageUrl.isNullOrBlank() || !item.localImagePath.isNullOrBlank()
             imagePreviewContainer.visibility = if (hasImage) View.VISIBLE else View.GONE
+            when {
+                !item.localImagePath.isNullOrBlank() -> {
+                    Glide.with(imagePreview.context)
+                        .load(File(item.localImagePath))
+                        .centerCrop()
+                        .into(imagePreview)
+                }
+                !item.imageUrl.isNullOrBlank() -> {
+                    Glide.with(imagePreview.context)
+                        .load(item.imageUrl)
+                        .centerCrop()
+                        .into(imagePreview)
+                }
+                else -> imagePreview.setImageDrawable(null)
+            }
             videoPreviewContainer.visibility = if (item.videoUrl != null) View.VISIBLE else View.GONE
+            root.setOnClickListener { onPostClick(item) }
         }
     }
 
-    override fun getItemCount(): Int = items.size
-
     class UserPostViewHolder(val binding: ItemProfilePostBinding) : RecyclerView.ViewHolder(binding.root)
+
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<Post>() {
+            override fun areItemsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem.id == newItem.id
+
+            override fun areContentsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem == newItem
+        }
+    }
 }

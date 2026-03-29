@@ -33,6 +33,8 @@ class LoginFragment : Fragment() {
 
         viewModel.authStateLive.observe(viewLifecycleOwner) { state ->
             binding.loginButton.isEnabled = !state.isLoading
+            binding.goToRegisterButton.isEnabled = !state.isLoading
+            binding.loginProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             state.errorMessage?.let { msg ->
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
             }

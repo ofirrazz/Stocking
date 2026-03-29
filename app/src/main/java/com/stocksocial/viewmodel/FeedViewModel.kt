@@ -29,15 +29,34 @@ class FeedViewModel(
     val publishError: StateFlow<String?> = _publishError.asStateFlow()
     val publishErrorLive: LiveData<String?> = _publishError.asLiveData()
 
+    private val _isPublishing = MutableStateFlow(false)
+    val isPublishing: StateFlow<Boolean> = _isPublishing.asStateFlow()
+    val isPublishingLive: LiveData<Boolean> = _isPublishing.asLiveData()
+
+    private val _postDetailsState = MutableStateFlow(UiState<Post>())
+    val postDetailsState: StateFlow<UiState<Post>> = _postDetailsState.asStateFlow()
+    val postDetailsStateLive: LiveData<UiState<Post>> = _postDetailsState.asLiveData()
+
+    private val _postActionState = MutableStateFlow(UiState<Unit>())
+    val postActionState: StateFlow<UiState<Unit>> = _postActionState.asStateFlow()
+    val postActionStateLive: LiveData<UiState<Unit>> = _postActionState.asLiveData()
+
     fun loadFeed() {
         viewModelScope.launch {
-            _feedState.value = UiState(isLoading = true)
+            val cached = feedRepository.getCachedPosts()
+            _feedState.value = UiState(
+                isLoading = true,
+                data = cached.takeIf { it.isNotEmpty() }
+            )
             when (val result = feedRepository.getFeedPosts()) {
                 is RepositoryResult.Success -> {
                     _feedState.value = UiState(data = result.data)
                 }
                 is RepositoryResult.Error -> {
-                    _feedState.value = UiState(errorMessage = result.message)
+                    _feedState.value = UiState(
+                        data = cached.takeIf { it.isNotEmpty() },
+                        errorMessage = result.message
+                    )
                 }
             }
         }
@@ -46,6 +65,7 @@ class FeedViewModel(
     fun publishPost(content: String, imageUri: Uri?) {
         viewModelScope.launch {
             _publishError.value = null
+            _isPublishing.value = true
             when (val result = feedRepository.publishPost(content, imageUri)) {
                 is RepositoryResult.Success -> {
                     _postPublished.value = true
@@ -55,6 +75,7 @@ class FeedViewModel(
                     _publishError.value = result.message
                 }
             }
+            _isPublishing.value = false
         }
     }
 
@@ -64,5 +85,46 @@ class FeedViewModel(
 
     fun consumePublishError() {
         _publishError.value = null
+    }
+
+    fun loadPostDetails(postId: String) {
+        viewModelScope.launch {
+            _postDetailsState.value = UiState(isLoading = true)
+            when (val result = feedRepository.getPostById(postId)) {
+                is RepositoryResult.Success -> _postDetailsState.value = UiState(data = result.data)
+                is RepositoryResult.Error -> _postDetailsState.value = UiState(errorMessage = result.message)
+            }
+        }
+    }
+
+    fun updatePost(postId: String, content: String, imageUri: Uri?) {
+        viewModelScope.launch {
+            _postActionState.value = UiState(isLoading = true)
+            when (val result = feedRepository.updatePost(postId, content, imageUri)) {
+                is RepositoryResult.Success -> {
+                    _postActionState.value = UiState(data = Unit)
+                    loadPostDetails(postId)
+                    loadFeed()
+                }
+                is RepositoryResult.Error -> _postActionState.value = UiState(errorMessage = result.message)
+            }
+        }
+    }
+
+    fun deletePost(postId: String) {
+        viewModelScope.launch {
+            _postActionState.value = UiState(isLoading = true)
+            when (val result = feedRepository.deletePost(postId)) {
+                is RepositoryResult.Success -> {
+                    _postActionState.value = UiState(data = Unit)
+                    loadFeed()
+                }
+                is RepositoryResult.Error -> _postActionState.value = UiState(errorMessage = result.message)
+            }
+        }
+    }
+
+    fun consumePostActionState() {
+        _postActionState.value = UiState()
     }
 }

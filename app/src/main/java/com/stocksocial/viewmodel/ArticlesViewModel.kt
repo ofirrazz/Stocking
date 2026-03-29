@@ -3,7 +3,6 @@ package com.stocksocial.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Article
 import com.stocksocial.repository.ArticlesRepository
@@ -25,23 +24,36 @@ class ArticlesViewModel(
     val articleDetailsState: StateFlow<UiState<Article>> = _articleDetailsState.asStateFlow()
     val articleDetailsStateLive: LiveData<UiState<Article>> = _articleDetailsState.asLiveData()
 
-    private val _filteredArticlesState = MutableLiveData(UiState<List<Article>>())
-    val filteredArticlesState: LiveData<UiState<List<Article>>> = _filteredArticlesState
+    private val _filteredArticlesState = MutableStateFlow(UiState<List<Article>>())
+    val filteredArticlesState: StateFlow<UiState<List<Article>>> = _filteredArticlesState.asStateFlow()
+    val filteredArticlesStateLive: LiveData<UiState<List<Article>>> = _filteredArticlesState.asLiveData()
     private var allArticles: List<Article> = emptyList()
+    private var selectedCategory: String? = null
 
     fun loadArticles() {
         viewModelScope.launch {
-            _articlesState.value = UiState(isLoading = true)
-            _filteredArticlesState.value = UiState(isLoading = true)
+            val cached = articlesRepository.getCachedArticles()
+            allArticles = cached
+            _articlesState.value = UiState(
+                isLoading = true,
+                data = cached.takeIf { it.isNotEmpty() }
+            )
+            publishFilteredState(isLoading = true, errorMessage = null)
             when (val result = articlesRepository.getArticles()) {
                 is RepositoryResult.Success -> {
-                    _articlesState.value = UiState(data = result.data)
                     allArticles = result.data
-                    applyCategoryFilter(null)
+                    _articlesState.value = UiState(data = result.data)
+                    publishFilteredState(isLoading = false, errorMessage = null)
                 }
                 is RepositoryResult.Error -> {
-                    _articlesState.value = UiState(errorMessage = result.message)
-                    _filteredArticlesState.value = UiState(errorMessage = result.message)
+                    _articlesState.value = UiState(
+                        data = cached.takeIf { it.isNotEmpty() },
+                        errorMessage = result.message
+                    )
+                    publishFilteredState(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
                 }
             }
         }
@@ -62,15 +74,23 @@ class ArticlesViewModel(
     }
 
     fun setCategoryFilter(category: String?) {
-        applyCategoryFilter(category)
+        selectedCategory = category
+        publishFilteredState()
     }
 
-    private fun applyCategoryFilter(category: String?) {
-        val filtered = if (category.isNullOrBlank()) {
+    private fun publishFilteredState(
+        isLoading: Boolean = false,
+        errorMessage: String? = null
+    ) {
+        val filtered = if (selectedCategory.isNullOrBlank()) {
             allArticles
         } else {
-            allArticles.filter { it.category.equals(category, ignoreCase = true) }
+            allArticles.filter { it.category.equals(selectedCategory, ignoreCase = true) }
         }
-        _filteredArticlesState.value = UiState(data = filtered)
+        _filteredArticlesState.value = UiState(
+            isLoading = isLoading,
+            data = filtered,
+            errorMessage = errorMessage
+        )
     }
 }

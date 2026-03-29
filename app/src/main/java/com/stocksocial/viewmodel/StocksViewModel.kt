@@ -9,6 +9,8 @@ import com.stocksocial.model.StockSignal
 import com.stocksocial.repository.RepositoryResult
 import com.stocksocial.repository.WatchlistRepository
 import com.stocksocial.utils.DummyData
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,19 +27,48 @@ class StocksViewModel(
     fun loadStocks() {
         viewModelScope.launch {
             _stocksState.value = UiState(isLoading = true)
-            when (val result = watchlistRepository.getWatchlist()) {
-                is RepositoryResult.Success -> {
-                    _stocksState.value = UiState(
-                        data = buildMockData(watchlistOverride = result.data.map { it.stock })
-                    )
-                }
-                is RepositoryResult.Error -> {
-                    _stocksState.value = UiState(
-                        data = buildMockData(),
-                        errorMessage = result.message
-                    )
-                }
+
+            val fallback = buildMockData()
+            val (marketResult, trendingResult, watchlistResult) = coroutineScope {
+                val marketDeferred = async { watchlistRepository.getMarketIndices() }
+                val trendingDeferred = async { watchlistRepository.getTrendingStocks() }
+                val watchlistDeferred = async { watchlistRepository.getWatchlist() }
+                Triple(
+                    marketDeferred.await(),
+                    trendingDeferred.await(),
+                    watchlistDeferred.await()
+                )
             }
+
+            val marketIndices = when (marketResult) {
+                is RepositoryResult.Success -> marketResult.data
+                is RepositoryResult.Error -> fallback.marketIndices
+            }
+
+            val trendingStocks = when (trendingResult) {
+                is RepositoryResult.Success -> trendingResult.data
+                is RepositoryResult.Error -> fallback.trendingStocks
+            }
+
+            val watchlistStocks = when (watchlistResult) {
+                is RepositoryResult.Success -> watchlistResult.data.map { it.stock }
+                is RepositoryResult.Error -> fallback.watchlist
+            }
+
+            val firstError = listOf(marketResult, trendingResult, watchlistResult)
+                .filterIsInstance<RepositoryResult.Error>()
+                .firstOrNull()
+                ?.message
+
+            _stocksState.value = UiState(
+                data = StocksUiData(
+                    marketIndices = marketIndices,
+                    trendingStocks = trendingStocks,
+                    watchlist = watchlistStocks,
+                    topSignals = fallback.topSignals
+                ),
+                errorMessage = firstError
+            )
         }
     }
 

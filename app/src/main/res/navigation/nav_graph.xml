@@ -69,6 +69,9 @@
         <action
             android:id="@+id/action_profileFragment_to_createPostFragment"
             app:destination="@id/createPostFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_postDetailsFragment"
+            app:destination="@id/postDetailsFragment" />
     </fragment>
 
     <fragment
@@ -79,7 +82,11 @@
     <fragment
         android:id="@+id/postDetailsFragment"
         android:name="com.stocksocial.ui.post.PostDetailsFragment"
-        android:label="@string/post_details" />
+        android:label="@string/post_details">
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/articleDetailsFragment"

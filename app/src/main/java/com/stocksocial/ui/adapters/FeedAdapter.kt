@@ -3,6 +3,8 @@ package com.stocksocial.ui.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.stocksocial.databinding.ItemFeedPostBinding
@@ -11,15 +13,9 @@ import java.io.File
 import java.text.NumberFormat
 import java.util.Locale
 
-class FeedAdapter : RecyclerView.Adapter<FeedAdapter.FeedViewHolder>() {
-
-    private val items = mutableListOf<Post>()
-
-    fun submitList(posts: List<Post>) {
-        items.clear()
-        items.addAll(posts)
-        notifyDataSetChanged()
-    }
+class FeedAdapter(
+    private val onPostClick: (Post) -> Unit
+) : ListAdapter<Post, FeedAdapter.FeedViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FeedViewHolder {
         val binding = ItemFeedPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -27,7 +23,7 @@ class FeedAdapter : RecyclerView.Adapter<FeedAdapter.FeedViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: FeedViewHolder, position: Int) {
-        val item = items[position]
+        val item = getItem(position)
         with(holder.binding) {
             usernameText.text = item.author.username
             timeText.text = item.createdAt
@@ -59,10 +55,18 @@ class FeedAdapter : RecyclerView.Adapter<FeedAdapter.FeedViewHolder>() {
             } else {
                 stockInfoContainer.visibility = View.GONE
             }
+
+            root.setOnClickListener { onPostClick(item) }
         }
     }
 
-    override fun getItemCount(): Int = items.size
-
     class FeedViewHolder(val binding: ItemFeedPostBinding) : RecyclerView.ViewHolder(binding.root)
+
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<Post>() {
+            override fun areItemsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem.id == newItem.id
+
+            override fun areContentsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem == newItem
+        }
+    }
 }

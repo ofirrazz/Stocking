@@ -1,5 +1,6 @@
 package com.stocksocial.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -24,6 +25,10 @@ class ProfileViewModel(
     private val _userPostsState = MutableStateFlow(UiState<List<Post>>())
     val userPostsState: StateFlow<UiState<List<Post>>> = _userPostsState.asStateFlow()
     val userPostsStateLive: LiveData<UiState<List<Post>>> = _userPostsState.asLiveData()
+
+    private val _profileUpdateState = MutableStateFlow(UiState<User>())
+    val profileUpdateState: StateFlow<UiState<User>> = _profileUpdateState.asStateFlow()
+    val profileUpdateStateLive: LiveData<UiState<User>> = _profileUpdateState.asLiveData()
 
     fun loadProfile() {
         viewModelScope.launch {
@@ -51,5 +56,24 @@ class ProfileViewModel(
                 }
             }
         }
+    }
+
+    fun updateProfile(newName: String?, newImageUri: Uri?) {
+        viewModelScope.launch {
+            _profileUpdateState.value = UiState(isLoading = true)
+            when (val result = profileRepository.updateProfile(newName, newImageUri)) {
+                is RepositoryResult.Success -> {
+                    _profileUpdateState.value = UiState(data = result.data)
+                    _profileState.value = UiState(data = result.data)
+                }
+                is RepositoryResult.Error -> {
+                    _profileUpdateState.value = UiState(errorMessage = result.message)
+                }
+            }
+        }
+    }
+
+    fun consumeProfileUpdateState() {
+        _profileUpdateState.value = UiState()
     }
 }
