@@ -8,12 +8,17 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.stocksocial.R
 import com.stocksocial.databinding.FragmentRegisterBinding
+import com.stocksocial.utils.appContainer
+import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
 
 class RegisterFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: AuthViewModel by viewModels {
+        AppViewModelFactory(authRepository = appContainer.authRepository)
+    }
     private var _binding: FragmentRegisterBinding? = null
     private val binding get() = _binding!!
 
@@ -29,37 +34,16 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupListeners()
-        observeViewModel()
-    }
-
-    private fun setupListeners() {
         binding.registerButton.setOnClickListener {
-            val email = binding.emailInput.text.toString()
-            val password = binding.passwordInput.text.toString()
-            val username = binding.usernameInput.text.toString()
+            val username = binding.usernameInput.text?.toString()?.trim().orEmpty()
+            val email = binding.emailInput.text?.toString()?.trim().orEmpty()
+            val password = binding.passwordInput.text?.toString().orEmpty()
 
-            if (email.isNotEmpty() && password.isNotEmpty() && username.isNotEmpty()) {
-                viewModel.register(email, password)
-            } else {
-                Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(requireContext(), "Fill all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-        }
-    }
-
-    private fun observeViewModel() {
-        viewModel.user.observe(viewLifecycleOwner) { user ->
-            if (user != null) {
-                // Navigate to feed after successful registration
-                val action = RegisterFragmentDirections.actionRegisterFragmentToLoginFragment()
-                findNavController().navigate(action)
-            }
-        }
-
-        viewModel.error.observe(viewLifecycleOwner) { error ->
-            error?.let {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            }
+            findNavController().navigate(R.id.feedFragment)
         }
     }
 

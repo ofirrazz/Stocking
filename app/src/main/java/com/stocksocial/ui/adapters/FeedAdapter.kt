@@ -4,42 +4,46 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.stocksocial.databinding.ItemPostBinding
+import com.stocksocial.databinding.ItemFeedPostBinding
 import com.stocksocial.model.Post
+import java.text.NumberFormat
+import java.util.Locale
 
 class FeedAdapter : RecyclerView.Adapter<FeedAdapter.FeedViewHolder>() {
 
-    private var posts: List<Post> = emptyList()
+    private val items = mutableListOf<Post>()
 
-    fun setPosts(newPosts: List<Post>) {
-        this.posts = newPosts
+    fun submitList(posts: List<Post>) {
+        items.clear()
+        items.addAll(posts)
         notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FeedViewHolder {
-        val binding = ItemPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemFeedPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return FeedViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: FeedViewHolder, position: Int) {
-        val post = posts[position]
-        
-        holder.binding.titleText.text = post.authorName
-        holder.binding.subtitleText.text = post.content
-        
-        // Show/Hide image based on URL availability
-        if (!post.imageUrl.isNullOrEmpty()) {
-            holder.binding.postImage.visibility = View.VISIBLE
-            Glide.with(holder.itemView.context)
-                .load(post.imageUrl)
-                .into(holder.binding.postImage)
-        } else {
-            holder.binding.postImage.visibility = View.GONE
+        val item = items[position]
+        with(holder.binding) {
+            usernameText.text = item.author.username
+            timeText.text = item.createdAt
+            postContentText.text = item.content
+            likesCountText.text = item.likesCount.toString()
+            commentsCountText.text = item.commentsCount.toString()
+
+            if (item.stockSymbol != null && item.stockPrice != null) {
+                stockInfoContainer.visibility = View.VISIBLE
+                stockSymbolText.text = item.stockSymbol
+                stockPriceText.text = NumberFormat.getCurrencyInstance(Locale.US).format(item.stockPrice)
+            } else {
+                stockInfoContainer.visibility = View.GONE
+            }
         }
     }
 
-    override fun getItemCount(): Int = posts.size
+    override fun getItemCount(): Int = items.size
 
-    class FeedViewHolder(val binding: ItemPostBinding) : RecyclerView.ViewHolder(binding.root)
+    class FeedViewHolder(val binding: ItemFeedPostBinding) : RecyclerView.ViewHolder(binding.root)
 }

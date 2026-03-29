@@ -10,11 +10,15 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentLoginBinding
+import com.stocksocial.utils.appContainer
+import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
 
 class LoginFragment : Fragment() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: AuthViewModel by viewModels {
+        AppViewModelFactory(authRepository = appContainer.authRepository)
+    }
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
@@ -30,37 +34,19 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupListeners()
-        observeViewModel()
-    }
-
-    private fun setupListeners() {
         binding.loginButton.setOnClickListener {
-            val email = binding.emailInput.text.toString()
-            val password = binding.passwordInput.text.toString()
-            if (email.isNotEmpty() && password.isNotEmpty()) {
-                viewModel.login(email, password)
-            } else {
-                Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            val emailOrUsername = binding.emailInput.text?.toString()?.trim().orEmpty()
+            val password = binding.passwordInput.text?.toString().orEmpty()
+
+            if (emailOrUsername.isEmpty() || password.isEmpty()) {
+                Toast.makeText(requireContext(), "Fill username/email and password", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
+            findNavController().navigate(R.id.feedFragment)
         }
 
         binding.goToRegisterButton.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
-        }
-    }
-
-    private fun observeViewModel() {
-        viewModel.user.observe(viewLifecycleOwner) { user ->
-            if (user != null) {
-                findNavController().navigate(R.id.action_loginFragment_to_feedFragment)
-            }
-        }
-
-        viewModel.error.observe(viewLifecycleOwner) { error ->
-            error?.let {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            }
         }
     }
 

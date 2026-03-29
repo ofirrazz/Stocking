@@ -6,9 +6,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.stocksocial.databinding.ItemStockBinding
 import com.stocksocial.model.Stock
 
-class WatchlistAdapter(
-    private val items: List<Stock> = emptyList()
-) : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>() {
+class WatchlistAdapter : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>() {
+
+    private val items = mutableListOf<Stock>()
+
+    fun submitList(list: List<Stock>) {
+        items.clear()
+        items.addAll(list)
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StockViewHolder {
         val binding = ItemStockBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -17,8 +23,17 @@ class WatchlistAdapter(
 
     override fun onBindViewHolder(holder: StockViewHolder, position: Int) {
         val item = items[position]
-        holder.binding.titleText.text = item.symbol
-        holder.binding.subtitleText.text = "${item.name} - ${item.price}"
+        holder.binding.symbolText.text = item.symbol
+        holder.binding.nameText.text = item.name
+        holder.binding.priceText.text = "$${"%.2f".format(item.price)}"
+        val change = "${if (item.dailyChangePercent >= 0) "+" else ""}${"%.2f".format(item.dailyChangePercent)}%"
+        holder.binding.changeText.text = change
+        holder.binding.changeText.setTextColor(
+            holder.binding.root.context.getColor(
+                if (item.dailyChangePercent >= 0) com.stocksocial.R.color.feed_accent_green
+                else com.stocksocial.R.color.feed_accent_red
+            )
+        )
     }
 
     override fun getItemCount(): Int = items.size
