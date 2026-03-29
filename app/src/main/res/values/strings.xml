@@ -4,6 +4,13 @@
     <string name="feed">Feed</string>
     <string name="feed_subtitle">Track ideas, market moves and community sentiment</string>
     <string name="stocks">Stocks</string>
+    <string name="stocks_subtitle">Discover movers, trends and actionable signals</string>
+    <string name="search_stocks_hint">Search symbols, companies or ideas</string>
+    <string name="market_indices">Market Indices</string>
+    <string name="trending_stocks">Trending Stocks</string>
+    <string name="watchlist_section_title">Watchlist</string>
+    <string name="top_signals">Top Signals</string>
+    <string name="top_signals_subtitle">TradingView-inspired opportunities from momentum and structure</string>
     <string name="articles">Articles</string>
     <string name="profile">Profile</string>
     <string name="profile_full_name">Ofir Raz</string>

@@ -6,19 +6,29 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stocksocial.databinding.FragmentStocksBinding
+import com.stocksocial.ui.adapters.MarketIndexAdapter
+import com.stocksocial.ui.adapters.TopSignalsAdapter
+import com.stocksocial.ui.adapters.TrendingStocksAdapter
 import com.stocksocial.ui.adapters.WatchlistAdapter
 import com.stocksocial.utils.appContainer
-import com.stocksocial.utils.DummyData
 import com.stocksocial.viewmodel.AppViewModelFactory
 import com.stocksocial.viewmodel.StocksViewModel
+import kotlinx.coroutines.launch
 
 class StocksFragment : Fragment() {
 
     private val viewModel: StocksViewModel by viewModels {
         AppViewModelFactory(watchlistRepository = appContainer.watchlistRepository)
     }
+    private val marketIndexAdapter = MarketIndexAdapter()
+    private val trendingStocksAdapter = TrendingStocksAdapter()
+    private val watchlistAdapter = WatchlistAdapter()
+    private val topSignalsAdapter = TopSignalsAdapter()
     private var _binding: FragmentStocksBinding? = null
     private val binding get() = _binding!!
 
@@ -34,8 +44,34 @@ class StocksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.watchlistRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.watchlistRecyclerView.adapter = WatchlistAdapter(DummyData.watchlistStocks())
+        binding.marketIndicesRecyclerView.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.marketIndicesRecyclerView.adapter = marketIndexAdapter
+
+        binding.trendingRecyclerView.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.trendingRecyclerView.adapter = trendingStocksAdapter
+
+        binding.watchlistRecyclerView.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.watchlistRecyclerView.adapter = watchlistAdapter
+
+        binding.topSignalsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.topSignalsRecyclerView.adapter = topSignalsAdapter
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.stocksState.collect { state ->
+                    val data = state.data ?: return@collect
+                    marketIndexAdapter.submitList(data.marketIndices)
+                    trendingStocksAdapter.submitList(data.trendingStocks)
+                    watchlistAdapter.submitList(data.watchlist)
+                    topSignalsAdapter.submitList(data.topSignals)
+                }
+            }
+        }
+
+        viewModel.loadMockStocks()
     }
 
     override fun onDestroyView() {

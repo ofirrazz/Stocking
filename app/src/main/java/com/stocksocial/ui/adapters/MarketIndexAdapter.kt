@@ -3,10 +3,10 @@ package com.stocksocial.ui.adapters
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.stocksocial.databinding.ItemStockBinding
+import com.stocksocial.databinding.ItemMarketIndexBinding
 import com.stocksocial.model.Stock
 
-class WatchlistAdapter : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>() {
+class MarketIndexAdapter : RecyclerView.Adapter<MarketIndexAdapter.MarketIndexViewHolder>() {
 
     private val items = mutableListOf<Stock>()
 
@@ -16,15 +16,14 @@ class WatchlistAdapter : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>(
         notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StockViewHolder {
-        val binding = ItemStockBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return StockViewHolder(binding)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MarketIndexViewHolder {
+        val binding = ItemMarketIndexBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return MarketIndexViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: StockViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: MarketIndexViewHolder, position: Int) {
         val item = items[position]
         holder.binding.symbolText.text = item.symbol
-        holder.binding.nameText.text = item.name
         holder.binding.priceText.text = "$${"%.2f".format(item.price)}"
         val change = "${if (item.dailyChangePercent >= 0) "+" else ""}${"%.2f".format(item.dailyChangePercent)}%"
         holder.binding.changeText.text = change
@@ -38,5 +37,5 @@ class WatchlistAdapter : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>(
 
     override fun getItemCount(): Int = items.size
 
-    class StockViewHolder(val binding: ItemStockBinding) : RecyclerView.ViewHolder(binding.root)
+    class MarketIndexViewHolder(val binding: ItemMarketIndexBinding) : RecyclerView.ViewHolder(binding.root)
 }
