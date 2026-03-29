@@ -7,15 +7,11 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentRegisterBinding
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
 
@@ -35,19 +31,16 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.authState.collect { state ->
-                    binding.registerButton.isEnabled = !state.isLoading
-                    state.errorMessage?.let { msg ->
-                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
-                    }
-                    if (state.data?.isAuthenticated == true &&
-                        findNavController().currentDestination?.id == R.id.registerFragment
-                    ) {
-                        findNavController().navigate(R.id.action_registerFragment_to_feedFragment)
-                    }
-                }
+        viewModel.authStateLive.observe(viewLifecycleOwner) { state ->
+            binding.registerButton.isEnabled = !state.isLoading
+            state.errorMessage?.let { msg ->
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+            }
+            if (state.data?.isAuthenticated == true &&
+                findNavController().currentDestination?.id == R.id.registerFragment
+            ) {
+                val direction = RegisterFragmentDirections.actionRegisterFragmentToFeedFragment()
+                findNavController().navigate(direction)
             }
         }
 

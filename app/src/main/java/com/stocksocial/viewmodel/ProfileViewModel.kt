@@ -1,6 +1,8 @@
 package com.stocksocial.viewmodel
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Post
 import com.stocksocial.model.User
@@ -17,9 +19,11 @@ class ProfileViewModel(
 
     private val _profileState = MutableStateFlow(UiState<User>())
     val profileState: StateFlow<UiState<User>> = _profileState.asStateFlow()
+    val profileStateLive: LiveData<UiState<User>> = _profileState.asLiveData()
 
     private val _userPostsState = MutableStateFlow(UiState<List<Post>>())
     val userPostsState: StateFlow<UiState<List<Post>>> = _userPostsState.asStateFlow()
+    val userPostsStateLive: LiveData<UiState<List<Post>>> = _userPostsState.asLiveData()
 
     fun loadProfile() {
         viewModelScope.launch {

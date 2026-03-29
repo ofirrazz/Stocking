@@ -41,9 +41,11 @@
     <string name="login">Login</string>
     <string name="login_subtitle">Welcome back to your stock community</string>
     <string name="register">Register</string>
+    <string name="register_subtitle">Create your StockSocial account</string>
     <string name="logout">Logout</string>
     <string name="my_posts">My Posts</string>
     <string name="create_post">Create Post</string>
+    <string name="create_post_subtitle">Share your insight with the community</string>
     <string name="post_details">Post Details</string>
     <string name="article_details">Article Details</string>
     <string name="article_author_format">By %1$s</string>

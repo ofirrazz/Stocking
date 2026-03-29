@@ -1,21 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/feed_card_background"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/feed_card_stroke"
+    app:strokeWidth="1dp">
 
-    <TextView
-        android:id="@+id/titleText"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+        android:orientation="vertical"
+        android:padding="12dp">
 
-    <TextView
-        android:id="@+id/subtitleText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/feed_text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/subtitleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/feed_text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -1,46 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/feed_background">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/createPostHeader"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/create_post"
-        android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="20dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <EditText
-        android:id="@+id/postContentInput"
-        android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:layout_marginTop="12dp"
-        android:gravity="top"
-        android:hint="@string/what_is_on_your_mind"
-        android:inputType="textMultiLine" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/create_post"
+            android:textColor="@color/feed_text_primary"
+            android:textSize="30sp"
+            android:textStyle="bold" />
 
-    <ImageView
-        android:id="@+id/imagePreview"
-        android:layout_width="match_parent"
-        android:layout_height="160dp"
-        android:layout_marginTop="12dp"
-        android:contentDescription="@string/post_image"
-        android:scaleType="centerCrop"
-        android:visibility="gone" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/create_post_subtitle"
+            android:textColor="@color/feed_text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/pickImageButton"
-        android:layout_width="match_parent"
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/pick_image" />
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        app:cardBackgroundColor="@color/feed_card_background"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/createPostHeader"
+        app:strokeColor="@color/feed_card_stroke"
+        app:strokeWidth="1dp">
 
-    <Button
-        android:id="@+id/publishPostButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/publish" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-</LinearLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/what_is_on_your_mind"
+                app:boxBackgroundColor="@color/feed_chip_background"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp"
+                app:boxStrokeColor="@color/feed_card_stroke"
+                app:hintTextColor="@color/feed_text_muted">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/postContentInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:gravity="top"
+                    android:inputType="textMultiLine"
+                    android:textColor="@color/feed_text_primary"
+                    android:textColorHint="@color/feed_text_muted" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <ImageView
+                android:id="@+id/imagePreview"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginTop="12dp"
+                android:contentDescription="@string/post_image"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/pickImageButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/pick_image"
+                android:textAllCaps="false"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/feed_card_stroke" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/publishPostButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
+                android:text="@string/publish"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                app:backgroundTint="@color/nav_item_color"
+                app:cornerRadius="14dp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

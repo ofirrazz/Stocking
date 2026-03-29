@@ -1,6 +1,8 @@
 package com.stocksocial.viewmodel
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Stock
 import com.stocksocial.model.StockSignal
@@ -18,6 +20,7 @@ class StocksViewModel(
 
     private val _stocksState = MutableStateFlow(UiState(data = StocksUiData()))
     val stocksState: StateFlow<UiState<StocksUiData>> = _stocksState.asStateFlow()
+    val stocksStateLive: LiveData<UiState<StocksUiData>> = _stocksState.asLiveData()
 
     fun loadStocks() {
         viewModelScope.launch {

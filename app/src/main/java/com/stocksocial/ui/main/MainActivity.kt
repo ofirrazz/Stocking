@@ -4,12 +4,12 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.stocksocial.R
 import com.stocksocial.databinding.ActivityMainBinding
+import com.stocksocial.ui.auth.LoginFragmentDirections
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,11 +25,10 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        if (FirebaseAuth.getInstance().currentUser != null) {
-            val options = NavOptions.Builder()
-                .setPopUpTo(R.id.loginFragment, true)
-                .build()
-            navController.navigate(R.id.feedFragment, null, options)
+        if (FirebaseAuth.getInstance().currentUser != null &&
+            navController.currentDestination?.id == R.id.loginFragment
+        ) {
+            navController.navigate(LoginFragmentDirections.actionLoginFragmentToFeedFragment())
         }
 
         binding.bottomNavigation.setupWithNavController(navController)

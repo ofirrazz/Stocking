@@ -6,15 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stocksocial.databinding.FragmentFeedBinding
 import com.stocksocial.ui.adapters.FeedAdapter
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.FeedViewModel
-import kotlinx.coroutines.launch
 
 class FeedFragment : Fragment() {
 
@@ -38,13 +34,9 @@ class FeedFragment : Fragment() {
         binding.feedRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.feedRecyclerView.adapter = feedAdapter
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.feedState.collect { state ->
-                    binding.loadingProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
-                    state.data?.let { posts -> feedAdapter.submitList(posts) }
-                }
-            }
+        viewModel.feedStateLive.observe(viewLifecycleOwner) { state ->
+            binding.loadingProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+            state.data?.let { posts -> feedAdapter.submitList(posts) }
         }
 
         viewModel.loadFeed()
