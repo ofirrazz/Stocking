@@ -46,7 +46,8 @@ class AppContainer(context: Context) {
     val profileRepository: ProfileRepository by lazy {
         ProfileRepository(
             firestore = FirebaseFirestore.getInstance(),
-            auth = FirebaseAuth.getInstance()
+            auth = FirebaseAuth.getInstance(),
+            postDao = database.postDao()
         )
     }
 

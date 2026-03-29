@@ -6,9 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stocksocial.databinding.FragmentStocksBinding
 import com.stocksocial.ui.adapters.MarketIndexAdapter
@@ -17,7 +14,6 @@ import com.stocksocial.ui.adapters.TrendingStocksAdapter
 import com.stocksocial.ui.adapters.WatchlistAdapter
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.StocksViewModel
-import kotlinx.coroutines.launch
 
 class StocksFragment : Fragment() {
 
@@ -56,16 +52,12 @@ class StocksFragment : Fragment() {
         binding.topSignalsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.topSignalsRecyclerView.adapter = topSignalsAdapter
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.stocksState.collect { state ->
-                    val data = state.data ?: return@collect
-                    marketIndexAdapter.submitList(data.marketIndices)
-                    trendingStocksAdapter.submitList(data.trendingStocks)
-                    watchlistAdapter.submitList(data.watchlist)
-                    topSignalsAdapter.submitList(data.topSignals)
-                }
-            }
+        viewModel.stocksStateLive.observe(viewLifecycleOwner) { state ->
+            val data = state.data ?: return@observe
+            marketIndexAdapter.submitList(data.marketIndices)
+            trendingStocksAdapter.submitList(data.trendingStocks)
+            watchlistAdapter.submitList(data.watchlist)
+            topSignalsAdapter.submitList(data.topSignals)
         }
 
         viewModel.loadMockStocks()

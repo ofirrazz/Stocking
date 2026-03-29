@@ -1,6 +1,8 @@
 package com.stocksocial.viewmodel
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.WatchlistItem
 import com.stocksocial.repository.RepositoryResult
@@ -16,6 +18,7 @@ class WatchlistViewModel(
 
     private val _watchlistState = MutableStateFlow(UiState<List<WatchlistItem>>())
     val watchlistState: StateFlow<UiState<List<WatchlistItem>>> = _watchlistState.asStateFlow()
+    val watchlistStateLive: LiveData<UiState<List<WatchlistItem>>> = _watchlistState.asLiveData()
 
     fun loadWatchlist() {
         viewModelScope.launch {

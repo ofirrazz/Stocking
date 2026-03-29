@@ -7,15 +7,11 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentLoginBinding
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
 
@@ -35,18 +31,15 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.authState.collect { state ->
-                    binding.loginButton.isEnabled = !state.isLoading
-                    state.errorMessage?.let { msg ->
-                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
-                    }
-                    val authenticated = state.data?.isAuthenticated == true
-                    if (authenticated && findNavController().currentDestination?.id == R.id.loginFragment) {
-                        findNavController().navigate(R.id.feedFragment)
-                    }
-                }
+        viewModel.authStateLive.observe(viewLifecycleOwner) { state ->
+            binding.loginButton.isEnabled = !state.isLoading
+            state.errorMessage?.let { msg ->
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+            }
+            val authenticated = state.data?.isAuthenticated == true
+            if (authenticated && findNavController().currentDestination?.id == R.id.loginFragment) {
+                val direction = LoginFragmentDirections.actionLoginFragmentToFeedFragment()
+                findNavController().navigate(direction)
             }
         }
 
@@ -62,7 +55,8 @@ class LoginFragment : Fragment() {
         }
 
         binding.goToRegisterButton.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
+            val direction = LoginFragmentDirections.actionLoginFragmentToRegisterFragment()
+            findNavController().navigate(direction)
         }
     }
 

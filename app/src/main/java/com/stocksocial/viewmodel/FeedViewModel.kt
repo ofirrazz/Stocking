@@ -23,9 +23,11 @@ class FeedViewModel(
 
     private val _postPublished = MutableStateFlow(false)
     val postPublished: StateFlow<Boolean> = _postPublished.asStateFlow()
+    val postPublishedLive: LiveData<Boolean> = _postPublished.asLiveData()
 
     private val _publishError = MutableStateFlow<String?>(null)
     val publishError: StateFlow<String?> = _publishError.asStateFlow()
+    val publishErrorLive: LiveData<String?> = _publishError.asLiveData()
 
     fun loadFeed() {
         viewModelScope.launch {

@@ -9,15 +9,11 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentCreatePostBinding
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.FeedViewModel
-import kotlinx.coroutines.launch
 
 class CreatePostFragment : Fragment() {
 
@@ -60,25 +56,18 @@ class CreatePostFragment : Fragment() {
             viewModel.publishPost(content, pickedUri)
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.postPublished.collect { published ->
-                        if (published) {
-                            Toast.makeText(requireContext(), R.string.published_ok, Toast.LENGTH_SHORT).show()
-                            viewModel.consumePostPublished()
-                            findNavController().navigateUp()
-                        }
-                    }
-                }
-                launch {
-                    viewModel.publishError.collect { err ->
-                        if (!err.isNullOrBlank()) {
-                            Toast.makeText(requireContext(), err, Toast.LENGTH_LONG).show()
-                            viewModel.consumePublishError()
-                        }
-                    }
-                }
+        viewModel.postPublishedLive.observe(viewLifecycleOwner) { published ->
+            if (published) {
+                Toast.makeText(requireContext(), R.string.published_ok, Toast.LENGTH_SHORT).show()
+                viewModel.consumePostPublished()
+                findNavController().navigateUp()
+            }
+        }
+
+        viewModel.publishErrorLive.observe(viewLifecycleOwner) { err ->
+            if (!err.isNullOrBlank()) {
+                Toast.makeText(requireContext(), err, Toast.LENGTH_LONG).show()
+                viewModel.consumePublishError()
             }
         }
     }
