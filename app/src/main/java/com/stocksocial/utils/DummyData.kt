@@ -94,23 +94,70 @@ object DummyData {
     fun articles(): List<Article> = listOf(
         Article(
             id = "a1",
+            category = "Economics",
             title = "Fed Signals Potential Rate Pause",
             summary = "Markets react as inflation data cools for a second month.",
+            author = "Elena Morris",
+            content = "Federal Reserve officials indicated that the policy path may become less restrictive if inflation continues to cool. Analysts expect bond yields to remain sensitive to upcoming labor and CPI prints. Equity markets moved higher as growth sectors outperformed.",
             source = "Bloomberg"
+            ,
+            publishedAt = "45m ago"
         ),
         Article(
             id = "a2",
+            category = "Technology",
             title = "AI Chip Demand Lifts Semiconductor Sector",
             summary = "Analysts revise growth forecasts for the next two quarters.",
+            author = "Jacob Lee",
+            content = "Institutional desks continue to rotate into semiconductor names after strong guidance updates from major suppliers. Capacity expansion remains a key theme, while valuation sensitivity has increased as expectations rise.",
             source = "Reuters"
+            ,
+            publishedAt = "1h ago"
         ),
         Article(
             id = "a3",
+            category = "Automotive",
             title = "Energy Stocks Rebound on Oil Strength",
             summary = "Crude climbs above key level and supports energy names.",
+            author = "Nora Patel",
+            content = "Energy names rebounded as crude prices reclaimed an important technical level. Traders are watching supply commentary and refinery utilization data for confirmation of trend continuation.",
             source = "WSJ"
+            ,
+            publishedAt = "3h ago"
+        ),
+        Article(
+            id = "a4",
+            category = "Earnings",
+            title = "AAPL Beats Revenue Expectations in Services",
+            summary = "Services growth offsets softer hardware demand in select regions.",
+            author = "Michael Grant",
+            content = "Apple reported stronger-than-expected services revenue, helping overall margins despite mixed device demand. Management highlighted recurring subscription momentum and disciplined cost controls.",
+            source = "CNBC",
+            publishedAt = "5h ago"
+        ),
+        Article(
+            id = "a5",
+            category = "Earnings",
+            title = "MSFT Cloud Growth Accelerates for Third Straight Quarter",
+            summary = "Azure momentum supports improved forward guidance.",
+            author = "Dana Cohen",
+            content = "Microsoft posted another solid quarter for cloud infrastructure and enterprise productivity. Improved utilization from large accounts helped operating leverage in the cloud segment.",
+            source = "The Information",
+            publishedAt = "Yesterday"
+        ),
+        Article(
+            id = "a6",
+            category = "Economics",
+            title = "US Jobless Claims Tick Up, Labor Market Still Tight",
+            summary = "Weekly claims rise modestly but remain below long-term averages.",
+            author = "Rachel Kim",
+            content = "Initial jobless claims rose slightly this week, but economists note that broader labor data still points to resilient hiring conditions. Markets now await payroll revisions and wage growth trends.",
+            source = "Financial Times",
+            publishedAt = "Yesterday"
         )
     )
+
+    fun articleById(articleId: String): Article? = articles().firstOrNull { it.id == articleId }
 
     fun watchlistStocks(): List<Stock> = listOf(
         Stock(symbol = "AAPL", name = "Apple", price = 227.45, dailyChangePercent = 1.14),
