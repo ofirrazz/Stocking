@@ -17,4 +17,5 @@
     <color name="feed_text_secondary">#A9B4C4</color>
     <color name="feed_text_muted">#7E8A9B</color>
     <color name="feed_accent_green">#3DDC97</color>
+    <color name="feed_accent_red">#FF6B6B</color>
 </resources>
