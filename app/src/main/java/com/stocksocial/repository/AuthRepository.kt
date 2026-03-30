@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.stocksocial.model.User
@@ -82,6 +83,49 @@ class AuthRepository(
                 RepositoryResult.Error(e.message ?: "Registration failed", e)
             }
         }
+
+    suspend fun signInWithGoogle(idToken: String): RepositoryResult<User> =
+        withContext(Dispatchers.IO) {
+            try {
+                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                val result = auth.signInWithCredential(credential).await()
+                val u = result.user ?: return@withContext RepositoryResult.Error("Google sign-in failed")
+                ensureFirestoreUserDoc(u)
+                RepositoryResult.Success(mapFirebaseUser(u))
+            } catch (e: Exception) {
+                RepositoryResult.Error(e.message ?: "Google sign-in failed", e)
+            }
+        }
+
+    private suspend fun ensureFirestoreUserDoc(u: FirebaseUser) {
+        val ref = firestore.collection("users").document(u.uid)
+        val snap = try {
+            ref.get().await()
+        } catch (_: Exception) {
+            return
+        }
+        if (snap.exists()) return
+        val trimmedName = u.displayName?.trim()?.takeIf { it.isNotEmpty() }
+            ?: u.email?.substringBefore("@")?.trim()?.takeIf { it.isNotEmpty() }
+            ?: "user"
+        val photo = u.photoUrl?.toString().orEmpty()
+        val userDoc = hashMapOf(
+            "username" to trimmedName,
+            "usernameLower" to trimmedName.lowercase(),
+            "displayName" to trimmedName,
+            "email" to u.email.orEmpty(),
+            "photoUrl" to photo,
+            "bio" to "",
+            "location" to "",
+            "website" to "",
+            "bannerUrl" to "",
+            "createdAt" to System.currentTimeMillis()
+        )
+        try {
+            ref.set(userDoc).await()
+        } catch (_: Exception) {
+        }
+    }
 
     private suspend fun resolveEmail(emailOrUsername: String): String {
         val normalized = emailOrUsername.trim()

@@ -22,6 +22,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentFeedBinding
+import com.stocksocial.model.FeedHotStockCategory
 import com.stocksocial.model.SearchSuggestion
 import com.stocksocial.model.SearchSuggestionType
 import com.stocksocial.repository.RepositoryResult
@@ -61,6 +62,7 @@ class FeedFragment : Fragment() {
     private var lastShownError: String? = null
     private var searchJob: Job? = null
     private var marketRefreshJob: Job? = null
+    private var feedHotChipId: Int = R.id.chipAll
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 
@@ -111,11 +113,24 @@ class FeedFragment : Fragment() {
             val id = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
             val chip = binding.root.findViewById<Chip>(id)
             applyChipStyle(chip)
+            feedHotChipId = id
+            when (id) {
+                R.id.chipAll -> {
+                    stocksViewModel.stocksStateLive.value?.data?.trendingStocks?.let {
+                        hotStocksAdapter.submitOrdered(it)
+                    }
+                }
+                R.id.chipTech -> loadFeedHotCategory(FeedHotStockCategory.technology)
+                R.id.chipBanking -> loadFeedHotCategory(FeedHotStockCategory.banking)
+                R.id.chipCrypto -> loadFeedHotCategory(FeedHotStockCategory.crypto)
+            }
         }
         applyChipStyle(binding.chipAll)
 
         stocksViewModel.stocksStateLive.observe(viewLifecycleOwner) { state ->
-            state.data?.trendingStocks?.let { hotStocksAdapter.submitOrdered(it) }
+            if (feedHotChipId == R.id.chipAll) {
+                state.data?.trendingStocks?.let { hotStocksAdapter.submitOrdered(it) }
+            }
         }
         stocksViewModel.loadStocks()
 
@@ -182,6 +197,17 @@ class FeedFragment : Fragment() {
         marketRefreshJob?.cancel()
         marketRefreshJob = null
         super.onStop()
+    }
+
+    private fun loadFeedHotCategory(symbolsInOrder: List<String>) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            when (val r = appContainer.watchlistRepository.getStocksForSymbols(symbolsInOrder)) {
+                is RepositoryResult.Success ->
+                    hotStocksAdapter.submitInDisplayOrder(r.data, symbolsInOrder)
+                is RepositoryResult.Error ->
+                    Toast.makeText(requireContext(), r.message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun showSearchPeopleDialog() {

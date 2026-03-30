@@ -58,6 +58,25 @@ class AuthViewModel(
         }
     }
 
+    fun signInWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            _authState.value = UiState(isLoading = true)
+            when (val result = authRepository.signInWithGoogle(idToken)) {
+                is RepositoryResult.Success -> {
+                    _authState.value = UiState(
+                        data = AuthUiModel(
+                            isAuthenticated = true,
+                            user = result.data
+                        )
+                    )
+                }
+                is RepositoryResult.Error -> {
+                    _authState.value = UiState(errorMessage = result.message)
+                }
+            }
+        }
+    }
+
     fun logout() {
         authRepository.logout()
         _authState.value = UiState(

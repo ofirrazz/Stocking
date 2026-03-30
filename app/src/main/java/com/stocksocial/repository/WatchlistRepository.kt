@@ -57,6 +57,22 @@ class WatchlistRepository(
         }
     }
 
+    suspend fun getStocksForSymbols(symbols: List<String>): RepositoryResult<List<Stock>> =
+        withContext(Dispatchers.IO) {
+            if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
+                return@withContext RepositoryResult.Error("Add FINNHUB_TOKEN in local.properties (see README).")
+            }
+            val normalized = symbols.map { it.trim().uppercase() }.filter { it.isNotEmpty() }
+            if (normalized.isEmpty()) {
+                return@withContext RepositoryResult.Success(emptyList())
+            }
+            try {
+                RepositoryResult.Success(fetchStocks(normalized))
+            } catch (e: Exception) {
+                RepositoryResult.Error(e.message ?: "Failed to load stocks", e)
+            }
+        }
+
     suspend fun getStockBySymbol(symbol: String): RepositoryResult<Stock> = withContext(Dispatchers.IO) {
         if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
             return@withContext RepositoryResult.Error("Add FINNHUB_TOKEN in local.properties (see README).")
@@ -140,7 +156,19 @@ class WatchlistRepository(
             "MSFT" to "Microsoft",
             "AAPL" to "Apple",
             "TSLA" to "Tesla",
-            "GOOGL" to "Alphabet"
+            "GOOGL" to "Alphabet",
+            "META" to "Meta",
+            "JPM" to "JPMorgan Chase",
+            "BAC" to "Bank of America",
+            "WFC" to "Wells Fargo",
+            "GS" to "Goldman Sachs",
+            "C" to "Citigroup",
+            "MS" to "Morgan Stanley",
+            "BINANCE:BTCUSDT" to "Bitcoin",
+            "BINANCE:ETHUSDT" to "Ethereum",
+            "BINANCE:SOLUSDT" to "Solana",
+            "BINANCE:XRPUSDT" to "XRP",
+            "BINANCE:ADAUSDT" to "Cardano"
         )
     }
 }

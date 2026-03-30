@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.stocksocial.R
 import com.stocksocial.databinding.ItemFeedHotStockBinding
+import com.stocksocial.model.FeedHotStockCategory
 import com.stocksocial.model.Stock
 import java.util.Locale
 
@@ -17,18 +18,25 @@ class FeedHotStocksAdapter(
     private val items = mutableListOf<Stock>()
 
     fun submitOrdered(list: List<Stock>) {
+        submitInDisplayOrder(list, FeedHotStockCategory.defaultTrendingOrder)
+    }
+
+    fun submitInDisplayOrder(list: List<Stock>, preferredOrder: List<String>, maxSlots: Int = 5) {
         items.clear()
-        val maxSlots = 5
-        val order = listOf("NVDA", "AAPL", "TSLA", "MSFT", "GOOGL", "AMD")
-        val inOrder = order.toSet()
+        if (preferredOrder.isEmpty()) {
+            list.take(maxSlots).forEach { items.add(it) }
+            notifyDataSetChanged()
+            return
+        }
+        val inPreferred = preferredOrder.toSet()
         val bySymbol = list.associateBy { it.symbol }
-        for (sym in order) {
+        for (sym in preferredOrder) {
             if (items.size >= maxSlots) break
             bySymbol[sym]?.let { items.add(it) }
         }
         val remaining = (maxSlots - items.size).coerceAtLeast(0)
         if (remaining > 0) {
-            list.filter { it.symbol !in inOrder }.take(remaining).forEach { items.add(it) }
+            list.filter { it.symbol !in inPreferred }.take(remaining).forEach { items.add(it) }
         }
         notifyDataSetChanged()
     }
@@ -42,7 +50,7 @@ class FeedHotStocksAdapter(
         val stock = items[position]
         val rank = position + 1
         val ctx = holder.binding.root.context
-        holder.binding.symbolText.text = "$${stock.symbol}"
+        holder.binding.symbolText.text = displayTitle(stock)
         val mentions = 800 + kotlin.math.abs(stock.symbol.hashCode() % 2200)
         holder.binding.mentionsText.text = ctx.getString(
             R.string.mentions_format,
@@ -80,6 +88,24 @@ class FeedHotStocksAdapter(
     }
 
     override fun getItemCount(): Int = items.size
+
+    private fun displayTitle(stock: Stock): String {
+        val name = stock.name.trim()
+        if (name.isNotEmpty() && !name.equals(stock.symbol, ignoreCase = true)) {
+            return name
+        }
+        val sym = stock.symbol
+        return if (sym.contains(':')) {
+            val pair = sym.substringAfter(':')
+            val base = pair
+                .removeSuffix("USDT")
+                .removeSuffix("USD")
+                .removeSuffix("BUSD")
+            if (base.isNotEmpty()) "$$base" else "$$sym"
+        } else {
+            "$$sym"
+        }
+    }
 
     class VH(val binding: ItemFeedHotStockBinding) : RecyclerView.ViewHolder(binding.root)
 }

@@ -142,7 +142,18 @@ class StockDetailsRepository(
             "TSLA" to "Tesla",
             "GOOGL" to "Alphabet Inc.",
             "META" to "Meta Platforms",
-            "AMZN" to "Amazon"
+            "AMZN" to "Amazon",
+            "JPM" to "JPMorgan Chase",
+            "BAC" to "Bank of America",
+            "WFC" to "Wells Fargo",
+            "GS" to "Goldman Sachs",
+            "C" to "Citigroup",
+            "MS" to "Morgan Stanley",
+            "BINANCE:BTCUSDT" to "Bitcoin",
+            "BINANCE:ETHUSDT" to "Ethereum",
+            "BINANCE:SOLUSDT" to "Solana",
+            "BINANCE:XRPUSDT" to "XRP",
+            "BINANCE:ADAUSDT" to "Cardano"
         )
     }
 }
