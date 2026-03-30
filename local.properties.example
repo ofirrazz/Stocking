@@ -1,0 +1,7 @@
+sdk.dir=/Users/<your-user>/Library/Android/sdk
+
+# Finnhub — https://finnhub.io/register
+# Create a free account → Dashboard → copy "API Key".
+# Add exactly one line in your real local.properties (never commit local.properties):
+# FINNHUB_TOKEN=paste_your_key_here
+FINNHUB_TOKEN=replace_with_your_token

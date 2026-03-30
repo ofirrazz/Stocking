@@ -173,11 +173,11 @@ object DummyData {
     )
 
     fun trendingStocks(): List<Stock> = listOf(
-        Stock(symbol = "AAPL", name = "Apple", price = 227.45, dailyChangePercent = 1.14),
-        Stock(symbol = "MSFT", name = "Microsoft", price = 431.90, dailyChangePercent = 0.67),
-        Stock(symbol = "NVDA", name = "NVIDIA", price = 912.60, dailyChangePercent = 2.48),
-        Stock(symbol = "AMD", name = "Advanced Micro Devices", price = 176.23, dailyChangePercent = 1.92),
-        Stock(symbol = "TSLA", name = "Tesla", price = 188.30, dailyChangePercent = -1.21)
+        Stock(symbol = "NVDA", name = "NVIDIA", price = 912.60, dailyChangePercent = 5.67),
+        Stock(symbol = "AAPL", name = "Apple", price = 227.45, dailyChangePercent = 2.10),
+        Stock(symbol = "TSLA", name = "Tesla", price = 188.30, dailyChangePercent = -1.23),
+        Stock(symbol = "MSFT", name = "Microsoft", price = 431.90, dailyChangePercent = 1.90),
+        Stock(symbol = "GOOGL", name = "Alphabet", price = 175.20, dailyChangePercent = -0.50)
     )
 
     fun topSignals(): List<StockSignal> = listOf(

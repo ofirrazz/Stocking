@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      match /followers/{followerId} {
+        allow read: if signedIn();
+        allow create, update: if isOwner(followerId);
+        allow delete: if isOwner(followerId);
+      }
+
+      match /following/{followingId} {
+        allow read: if signedIn();
+        allow create, update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /portfolio/{symbol} {
+        allow read: if signedIn();
+        allow create, update, delete: if isOwner(userId);
+      }
+
+      match /favoriteSymbols/{symbol} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      allow update: if signedIn() && resource.data.authorId == request.auth.uid;
+      allow update: if signedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'lastLikedBy']);
+    }
+
+    match /connection_test/{docId} {
+      allow read, write: if signedIn();
+    }
+  }
+}

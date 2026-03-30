@@ -17,6 +17,7 @@ import com.stocksocial.NavGraphDirections
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentPostDetailsBinding
 import com.stocksocial.utils.appViewModelFactory
+import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.FeedViewModel
 import java.io.File
 
@@ -80,6 +81,9 @@ class PostDetailsFragment : Fragment() {
                 binding.postMetaText.text = "${post.author.username} • ${post.createdAt}"
                 binding.postContentInput.setText(post.content)
                 binding.postContentInput.isEnabled = canEditPost
+                if (canEditPost) {
+                    binding.postContentInput.focusAndShowKeyboard()
+                }
                 binding.pickImageButton.visibility = if (canEditPost) View.VISIBLE else View.GONE
                 binding.updatePostButton.visibility = if (canEditPost) View.VISIBLE else View.GONE
                 binding.deletePostButton.visibility = if (canEditPost) View.VISIBLE else View.GONE

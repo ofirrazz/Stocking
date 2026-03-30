@@ -11,6 +11,7 @@ import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentRegisterBinding
 import com.stocksocial.utils.appViewModelFactory
+import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.AuthViewModel
 
 class RegisterFragment : Fragment() {
@@ -30,6 +31,7 @@ class RegisterFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.usernameInput.focusAndShowKeyboard()
 
         viewModel.authStateLive.observe(viewLifecycleOwner) { state ->
             binding.registerButton.isEnabled = !state.isLoading

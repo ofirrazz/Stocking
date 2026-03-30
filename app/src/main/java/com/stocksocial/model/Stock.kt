@@ -6,5 +6,10 @@ data class Stock(
     val price: Double,
     val dailyChangePercent: Double,
     val marketCap: Long? = null,
-    val volume: Long? = null
+    val volume: Long? = null,
+    val open: Double? = null,
+    val high: Double? = null,
+    val low: Double? = null,
+    val previousClose: Double? = null,
+    val dayChangeAbs: Double? = null
 )

@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.stocksocial.databinding.ItemProfilePostBinding
 import com.stocksocial.model.Post
+import com.stocksocial.ui.text.TickerSpannable
 import java.io.File
 import java.text.NumberFormat
 import java.util.Locale
@@ -16,7 +17,8 @@ import java.util.Locale
 class UserPostsAdapter(
     private val onEditClick: (Post) -> Unit,
     private val onLikeClick: (Post) -> Unit,
-    private val onShareClick: (Post) -> Unit
+    private val onShareClick: (Post) -> Unit,
+    private val onStockClick: (String) -> Unit
 ) : ListAdapter<Post, UserPostsAdapter.UserPostViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserPostViewHolder {
@@ -29,7 +31,7 @@ class UserPostsAdapter(
         with(holder.binding) {
             titleText.text = item.author.username
             timeText.text = item.createdAt
-            subtitleText.text = item.content
+            subtitleText.text = TickerSpannable.format(subtitleText.context, item.content)
             likesCountText.text = "${item.likesCount} likes"
             commentsCountText.text = "${item.commentsCount} comments"
 
@@ -37,8 +39,10 @@ class UserPostsAdapter(
                 stockInfoContainer.visibility = View.VISIBLE
                 stockSymbolText.text = item.stockSymbol
                 stockPriceText.text = NumberFormat.getCurrencyInstance(Locale.US).format(item.stockPrice)
+                stockInfoContainer.setOnClickListener { onStockClick(item.stockSymbol) }
             } else {
                 stockInfoContainer.visibility = View.GONE
+                stockInfoContainer.setOnClickListener(null)
             }
 
             val hasImage = !item.imageUrl.isNullOrBlank() || !item.localImagePath.isNullOrBlank()

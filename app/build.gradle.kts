@@ -4,7 +4,6 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("androidx.navigation.safeargs.kotlin")
-    id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
 }
 
@@ -14,6 +13,13 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 val finnhubToken: String = localProperties.getProperty("FINNHUB_TOKEN") ?: ""
+val hasGoogleServicesJson = rootProject.file("app/google-services.json").exists()
+
+if (hasGoogleServicesJson) {
+    apply(plugin = "com.google.gms.google-services")
+} else {
+    logger.warn("google-services.json was not found; Firebase services setup is disabled for this build.")
+}
 
 android {
     namespace = "com.stocksocial"
@@ -32,6 +38,7 @@ android {
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
         buildConfigField("String", "FINNHUB_TOKEN", "\"$escapedToken\"")
+        buildConfigField("boolean", "HAS_GOOGLE_SERVICES", hasGoogleServicesJson.toString())
     }
 
     buildTypes {
@@ -64,6 +71,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")

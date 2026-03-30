@@ -6,7 +6,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.stocksocial.databinding.ItemMarketIndexBinding
 import com.stocksocial.model.Stock
 
-class MarketIndexAdapter : RecyclerView.Adapter<MarketIndexAdapter.MarketIndexViewHolder>() {
+class MarketIndexAdapter(
+    private val onStockClick: (Stock) -> Unit
+) : RecyclerView.Adapter<MarketIndexAdapter.MarketIndexViewHolder>() {
 
     private val items = mutableListOf<Stock>()
 
@@ -29,6 +31,7 @@ class MarketIndexAdapter : RecyclerView.Adapter<MarketIndexAdapter.MarketIndexVi
         holder.binding.changeText.setTextColor(
             StockUiFormatter.resolveChangeColor(holder.binding.root.context, item.dailyChangePercent)
         )
+        holder.binding.root.setOnClickListener { onStockClick(item) }
     }
 
     override fun getItemCount(): Int = items.size

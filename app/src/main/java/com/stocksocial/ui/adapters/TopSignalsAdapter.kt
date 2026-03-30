@@ -6,7 +6,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.stocksocial.databinding.ItemTopSignalBinding
 import com.stocksocial.model.StockSignal
 
-class TopSignalsAdapter : RecyclerView.Adapter<TopSignalsAdapter.TopSignalViewHolder>() {
+class TopSignalsAdapter(
+    private val onSignalClick: (String) -> Unit
+) : RecyclerView.Adapter<TopSignalsAdapter.TopSignalViewHolder>() {
 
     private val items = mutableListOf<StockSignal>()
 
@@ -35,6 +37,7 @@ class TopSignalsAdapter : RecyclerView.Adapter<TopSignalsAdapter.TopSignalViewHo
                 else com.stocksocial.R.color.feed_accent_red
             )
         )
+        holder.binding.root.setOnClickListener { onSignalClick(item.symbol) }
     }
 
     override fun getItemCount(): Int = items.size

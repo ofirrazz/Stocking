@@ -9,35 +9,51 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.stocksocial.R
 import com.stocksocial.databinding.ActivityMainBinding
-import com.stocksocial.ui.auth.LoginFragmentDirections
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var navController: NavController
+    private var navController: NavController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+    }
 
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        navController = navHostFragment.navController
+    override fun onStart() {
+        super.onStart()
+        // NavHostFragment inside FragmentContainerView is not attached yet during Activity.onCreate().
+        connectNavigation()
+    }
 
-        if (FirebaseAuth.getInstance().currentUser != null &&
-            navController.currentDestination?.id == R.id.loginFragment
-        ) {
-            navController.navigate(LoginFragmentDirections.actionLoginFragmentToFeedFragment())
+    private fun connectNavigation() {
+        if (navController != null) return
+        val navHost =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                ?: return
+        val controller = navHost.navController
+        navController = controller
+
+        val authDestinations = setOf(
+            R.id.welcomeFragment,
+            R.id.loginFragment,
+            R.id.registerFragment
+        )
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            val dest = controller.currentDestination?.id
+            if (dest != null && dest in authDestinations) {
+                controller.navigate(R.id.action_global_feedFragment)
+            }
         }
 
-        binding.bottomNavigation.setupWithNavController(navController)
+        binding.bottomNavigation.setupWithNavController(controller)
 
-        navController.addOnDestinationChangedListener { _, destination, _ ->
+        controller.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav = destination.id in setOf(
                 R.id.feedFragment,
-                R.id.stocksFragment,
-                R.id.articlesFragment,
+                R.id.portfolioFragment,
+                R.id.notificationsFragment,
                 R.id.profileFragment
             )
             binding.bottomNavigation.visibility = if (showBottomNav) View.VISIBLE else View.GONE

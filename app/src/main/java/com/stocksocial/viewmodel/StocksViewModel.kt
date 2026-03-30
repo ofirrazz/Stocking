@@ -42,17 +42,20 @@ class StocksViewModel(
             }
 
             val marketIndices = when (marketResult) {
-                is RepositoryResult.Success -> marketResult.data
+                is RepositoryResult.Success ->
+                    marketResult.data.takeIf { it.isNotEmpty() } ?: fallback.marketIndices
                 is RepositoryResult.Error -> fallback.marketIndices
             }
 
             val trendingStocks = when (trendingResult) {
-                is RepositoryResult.Success -> trendingResult.data
+                is RepositoryResult.Success ->
+                    trendingResult.data.takeIf { it.isNotEmpty() } ?: fallback.trendingStocks
                 is RepositoryResult.Error -> fallback.trendingStocks
             }
 
             val watchlistStocks = when (watchlistResult) {
-                is RepositoryResult.Success -> watchlistResult.data.map { it.stock }
+                is RepositoryResult.Success ->
+                    watchlistResult.data.map { it.stock }.takeIf { it.isNotEmpty() } ?: fallback.watchlist
                 is RepositoryResult.Error -> fallback.watchlist
             }
 
@@ -70,6 +73,39 @@ class StocksViewModel(
                     recentSearches = recentSearches.toList()
                 ),
                 errorMessage = firstError
+            )
+        }
+    }
+
+    fun refreshMarketSnapshot() {
+        viewModelScope.launch {
+            val prev = _stocksState.value.data ?: StocksUiData()
+            val marketResult = watchlistRepository.getMarketIndices()
+            val trendingResult = watchlistRepository.getTrendingStocks()
+            val watchlistResult = watchlistRepository.getWatchlist()
+            val fallback = buildMockData(prev.watchlist.takeIf { it.isNotEmpty() })
+            val marketIndices = when (marketResult) {
+                is RepositoryResult.Success ->
+                    marketResult.data.takeIf { it.isNotEmpty() } ?: prev.marketIndices.ifEmpty { fallback.marketIndices }
+                is RepositoryResult.Error -> prev.marketIndices.ifEmpty { fallback.marketIndices }
+            }
+            val trendingStocks = when (trendingResult) {
+                is RepositoryResult.Success ->
+                    trendingResult.data.takeIf { it.isNotEmpty() } ?: prev.trendingStocks.ifEmpty { fallback.trendingStocks }
+                is RepositoryResult.Error -> prev.trendingStocks.ifEmpty { fallback.trendingStocks }
+            }
+            val watchlistStocks = when (watchlistResult) {
+                is RepositoryResult.Success ->
+                    watchlistResult.data.map { it.stock }.takeIf { it.isNotEmpty() }
+                        ?: prev.watchlist.ifEmpty { fallback.watchlist }
+                is RepositoryResult.Error -> prev.watchlist.ifEmpty { fallback.watchlist }
+            }
+            _stocksState.value = UiState(
+                data = prev.copy(
+                    marketIndices = marketIndices,
+                    trendingStocks = trendingStocks,
+                    watchlist = watchlistStocks
+                )
             )
         }
     }

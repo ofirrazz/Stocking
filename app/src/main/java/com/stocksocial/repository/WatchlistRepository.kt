@@ -2,6 +2,7 @@ package com.stocksocial.repository
 
 import com.stocksocial.BuildConfig
 import com.stocksocial.model.Stock
+import com.stocksocial.network.currentDisplayPrice
 import com.stocksocial.model.WatchlistItem
 import com.stocksocial.network.ApiService
 import kotlinx.coroutines.Dispatchers
@@ -67,15 +68,17 @@ class WatchlistRepository(
         try {
             val response = apiService.getQuote(symbol = normalized)
             val body = response.body()
-            if (!response.isSuccessful || body == null || body.c == 0.0) {
+            val price = body?.currentDisplayPrice()
+            if (!response.isSuccessful || body == null || price == null) {
                 return@withContext RepositoryResult.Error("Stock symbol not found")
             }
+            val pct = if (body.c > 0) body.dp else 0.0
             RepositoryResult.Success(
                 Stock(
                     symbol = normalized,
                     name = SYMBOL_NAMES[normalized] ?: normalized,
-                    price = body.c,
-                    dailyChangePercent = body.dp
+                    price = price,
+                    dailyChangePercent = pct
                 )
             )
         } catch (e: Exception) {
@@ -88,22 +91,44 @@ class WatchlistRepository(
             async {
                 val response = apiService.getQuote(symbol = symbol)
                 val body = response.body()
-                if (!response.isSuccessful || body == null) {
+                val price = body?.currentDisplayPrice()
+                if (!response.isSuccessful || body == null || price == null) {
                     return@async null
                 }
+                val pct = if (body.c > 0) body.dp else 0.0
                 Stock(
                     symbol = symbol,
                     name = SYMBOL_NAMES[symbol] ?: symbol,
-                    price = body.c,
-                    dailyChangePercent = body.dp
+                    price = price,
+                    dailyChangePercent = pct
                 )
             }
         }.awaitAll().filterNotNull()
     }
 
+    suspend fun getLatestPrices(symbols: List<String>): Map<String, Double> = withContext(Dispatchers.IO) {
+        if (BuildConfig.FINNHUB_TOKEN.isBlank()) return@withContext emptyMap()
+        val distinct = symbols.map { it.trim().uppercase() }.filter { it.isNotEmpty() }.distinct()
+        if (distinct.isEmpty()) return@withContext emptyMap()
+        coroutineScope {
+            distinct.map { symbol ->
+                async {
+                    try {
+                        val response = apiService.getQuote(symbol = symbol)
+                        val body = response.body()
+                        val price = body?.currentDisplayPrice() ?: return@async null
+                        symbol to price
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+            }.awaitAll().filterNotNull().toMap()
+        }
+    }
+
     companion object {
         private val MARKET_SYMBOLS = listOf("SPY", "DIA", "QQQ")
-        private val TRENDING_SYMBOLS = listOf("NVDA", "AMD", "MSFT", "AAPL", "TSLA")
+        private val TRENDING_SYMBOLS = listOf("NVDA", "AAPL", "TSLA", "MSFT", "GOOGL", "AMD")
         private val WATCHLIST_SYMBOLS = listOf("AAPL", "NVDA", "MSFT", "TSLA")
 
         private val SYMBOL_NAMES = mapOf(
@@ -114,7 +139,8 @@ class WatchlistRepository(
             "AMD" to "Advanced Micro Devices",
             "MSFT" to "Microsoft",
             "AAPL" to "Apple",
-            "TSLA" to "Tesla"
+            "TSLA" to "Tesla",
+            "GOOGL" to "Alphabet"
         )
     }
 }

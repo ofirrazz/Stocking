@@ -13,6 +13,7 @@ import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentCreatePostBinding
 import com.stocksocial.utils.appViewModelFactory
+import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.FeedViewModel
 
 class CreatePostFragment : Fragment() {
@@ -42,6 +43,7 @@ class CreatePostFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.postContentInput.focusAndShowKeyboard()
 
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
 

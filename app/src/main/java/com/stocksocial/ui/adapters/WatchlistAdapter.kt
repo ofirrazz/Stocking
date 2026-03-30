@@ -6,7 +6,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.stocksocial.databinding.ItemStockBinding
 import com.stocksocial.model.Stock
 
-class WatchlistAdapter : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>() {
+class WatchlistAdapter(
+    private val onStockClick: (Stock) -> Unit
+) : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>() {
 
     private val items = mutableListOf<Stock>()
 
@@ -30,6 +32,7 @@ class WatchlistAdapter : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>(
         holder.binding.changeText.setTextColor(
             StockUiFormatter.resolveChangeColor(holder.binding.root.context, item.dailyChangePercent)
         )
+        holder.binding.root.setOnClickListener { onStockClick(item) }
     }
 
     override fun getItemCount(): Int = items.size

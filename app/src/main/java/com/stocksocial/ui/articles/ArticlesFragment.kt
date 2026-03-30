@@ -47,7 +47,12 @@ class ArticlesFragment : Fragment() {
             val error = state.errorMessage
             if (!error.isNullOrBlank() && error != lastShownError) {
                 lastShownError = error
-                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                val text = if (!state.data.isNullOrEmpty()) {
+                    getString(com.stocksocial.R.string.cached_data_note)
+                } else {
+                    error
+                }
+                Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show()
             }
         }
 

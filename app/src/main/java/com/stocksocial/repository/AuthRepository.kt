@@ -42,10 +42,17 @@ class AuthRepository(
                 u.updateProfile(
                     UserProfileChangeRequest.Builder().setDisplayName(username).build()
                 ).await()
+                val trimmedName = username.trim()
                 val userDoc = hashMapOf(
-                    "username" to username,
+                    "username" to trimmedName,
+                    "usernameLower" to trimmedName.lowercase(),
+                    "displayName" to trimmedName,
                     "email" to email,
                     "photoUrl" to "",
+                    "bio" to "",
+                    "location" to "",
+                    "website" to "",
+                    "bannerUrl" to "",
                     "createdAt" to System.currentTimeMillis()
                 )
                 // Firestore profile is optional for successful auth.
@@ -58,10 +65,11 @@ class AuthRepository(
                 RepositoryResult.Success(
                     User(
                         id = u.uid,
-                        username = username,
+                        username = trimmedName,
                         email = email,
                         avatarUrl = null,
-                        bio = null
+                        bio = null,
+                        displayName = trimmedName
                     )
                 )
             } catch (e: FirebaseAuthWeakPasswordException) {
@@ -108,12 +116,14 @@ class AuthRepository(
             ?: u.displayName
             ?: u.email?.substringBefore("@")
             ?: "user"
+        val displayName = doc?.getString("displayName")?.takeIf { it.isNotBlank() } ?: username
         return User(
             id = u.uid,
             username = username,
             email = u.email.orEmpty(),
             avatarUrl = doc?.getString("photoUrl")?.takeIf { it.isNotBlank() },
-            bio = doc?.getString("bio")
+            bio = doc?.getString("bio"),
+            displayName = displayName
         )
     }
 

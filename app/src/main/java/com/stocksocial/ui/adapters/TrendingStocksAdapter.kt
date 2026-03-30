@@ -6,7 +6,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.stocksocial.databinding.ItemTrendingStockBinding
 import com.stocksocial.model.Stock
 
-class TrendingStocksAdapter : RecyclerView.Adapter<TrendingStocksAdapter.TrendingStockViewHolder>() {
+class TrendingStocksAdapter(
+    private val onStockClick: (Stock) -> Unit
+) : RecyclerView.Adapter<TrendingStocksAdapter.TrendingStockViewHolder>() {
 
     private val items = mutableListOf<Stock>()
 
@@ -30,6 +32,7 @@ class TrendingStocksAdapter : RecyclerView.Adapter<TrendingStocksAdapter.Trendin
         holder.binding.changeText.setTextColor(
             StockUiFormatter.resolveChangeColor(holder.binding.root.context, item.dailyChangePercent)
         )
+        holder.binding.root.setOnClickListener { onStockClick(item) }
     }
 
     override fun getItemCount(): Int = items.size

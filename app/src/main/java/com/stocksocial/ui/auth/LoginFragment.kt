@@ -11,6 +11,7 @@ import androidx.navigation.fragment.findNavController
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentLoginBinding
 import com.stocksocial.utils.appViewModelFactory
+import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.AuthViewModel
 
 class LoginFragment : Fragment() {
@@ -30,6 +31,7 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.emailInput.focusAndShowKeyboard()
 
         viewModel.authStateLive.observe(viewLifecycleOwner) { state ->
             binding.loginButton.isEnabled = !state.isLoading

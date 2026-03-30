@@ -7,8 +7,11 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Post
 import com.stocksocial.model.User
+import com.stocksocial.model.UserSuggestion
 import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.repository.RepositoryResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +40,10 @@ class ProfileViewModel(
     private val _likePostState = MutableStateFlow(UiState<Unit>())
     val likePostState: StateFlow<UiState<Unit>> = _likePostState.asStateFlow()
     val likePostStateLive: LiveData<UiState<Unit>> = _likePostState.asLiveData()
+    private val _userSearchState = MutableStateFlow(UiState<List<UserSuggestion>>(data = emptyList()))
+    val userSearchState: StateFlow<UiState<List<UserSuggestion>>> = _userSearchState.asStateFlow()
+    val userSearchStateLive: LiveData<UiState<List<UserSuggestion>>> = _userSearchState.asLiveData()
+    private var searchJob: Job? = null
 
     fun loadProfile() {
         viewModelScope.launch {
@@ -116,5 +123,26 @@ class ProfileViewModel(
 
     fun consumeLikePostState() {
         _likePostState.value = UiState()
+    }
+
+    fun searchUsersByPrefix(query: String) {
+        searchJob?.cancel()
+        val q = query.trim()
+        if (q.length < 2) {
+            _userSearchState.value = UiState(data = emptyList())
+            return
+        }
+        searchJob = viewModelScope.launch {
+            _userSearchState.value = UiState(isLoading = true, data = _userSearchState.value.data)
+            delay(220)
+            when (val result = profileRepository.searchUsersByPrefix(q)) {
+                is RepositoryResult.Success -> _userSearchState.value = UiState(data = result.data)
+                is RepositoryResult.Error -> _userSearchState.value = UiState(errorMessage = result.message, data = emptyList())
+            }
+        }
+    }
+
+    fun clearUserSearch() {
+        _userSearchState.value = UiState(data = emptyList())
     }
 }

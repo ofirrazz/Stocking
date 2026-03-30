@@ -22,14 +22,16 @@ class FeedRepository(
     private val storage: FirebaseStorage,
     private val auth: FirebaseAuth,
     private val postDao: PostDao,
-    private val appContext: Context
+    private val appContext: Context,
+    private val watchlistRepository: WatchlistRepository
 ) {
 
     suspend fun getFeedPosts(): RepositoryResult<List<Post>> = withContext(Dispatchers.IO) {
         try {
             val remoteEntities = fetchRemoteEntities()
-            cacheEntities(remoteEntities)
-            val hydrated = hydrateEntitiesWithImages(remoteEntities)
+            val withQuotes = mergeLatestQuotePrices(remoteEntities)
+            cacheEntities(withQuotes)
+            val hydrated = hydrateEntitiesWithImages(withQuotes)
             RepositoryResult.Success(hydrated.map { it.toPost() })
         } catch (e: Exception) {
             val cached = getCachedPosts()
@@ -177,6 +179,30 @@ class FeedRepository(
         return postDao.getAll().map { it.toPost() }
     }
 
+    suspend fun refreshQuotesForPosts(posts: List<Post>): List<Post> = withContext(Dispatchers.IO) {
+        val symbols = posts.mapNotNull { it.stockSymbol?.trim()?.uppercase() }.distinct()
+        if (symbols.isEmpty()) return@withContext posts
+        val prices = watchlistRepository.getLatestPrices(symbols)
+        if (prices.isEmpty()) return@withContext posts
+        posts.map { p ->
+            val sym = p.stockSymbol?.uppercase() ?: return@map p
+            val price = prices[sym] ?: return@map p
+            p.copy(stockPrice = price)
+        }
+    }
+
+    private suspend fun mergeLatestQuotePrices(entities: List<CachedPostEntity>): List<CachedPostEntity> {
+        val symbols = entities.mapNotNull { it.stockSymbol?.trim()?.uppercase() }.distinct()
+        if (symbols.isEmpty()) return entities
+        val prices = watchlistRepository.getLatestPrices(symbols)
+        if (prices.isEmpty()) return entities
+        return entities.map { e ->
+            val sym = e.stockSymbol?.uppercase() ?: return@map e
+            val price = prices[sym] ?: return@map e
+            e.copy(stockPrice = price)
+        }
+    }
+
     private fun buildPostPayload(
         postId: String,
         authorId: String,
@@ -186,17 +212,24 @@ class FeedRepository(
         imageUrl: String?
     ): HashMap<String, Any?> {
         val authorUsername = displayName ?: email?.substringBefore("@") ?: "user"
+        val normalizedContent = content.trim()
+        val extractedSymbol = extractTickerSymbol(normalizedContent)
         return hashMapOf(
             "id" to postId,
             "authorId" to authorId,
             "authorUsername" to authorUsername,
-            "content" to content.trim(),
+            "content" to normalizedContent,
             "imageUrl" to imageUrl,
             "createdAt" to System.currentTimeMillis(),
             "likesCount" to 0,
             "commentsCount" to 0,
-            "stockSymbol" to null,
+            "stockSymbol" to extractedSymbol,
             "stockPrice" to null
         )
+    }
+
+    private fun extractTickerSymbol(content: String): String? {
+        val regex = Regex("""\$(\p{Alpha}{1,6})\b""")
+        return regex.find(content)?.groupValues?.getOrNull(1)?.uppercase()
     }
 }

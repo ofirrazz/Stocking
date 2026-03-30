@@ -8,9 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Post
 import com.stocksocial.repository.FeedRepository
 import com.stocksocial.repository.RepositoryResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class FeedViewModel(
@@ -40,6 +43,36 @@ class FeedViewModel(
     private val _postActionState = MutableStateFlow(UiState<Unit>())
     val postActionState: StateFlow<UiState<Unit>> = _postActionState.asStateFlow()
     val postActionStateLive: LiveData<UiState<Unit>> = _postActionState.asLiveData()
+
+    private var quotePollJob: Job? = null
+
+    fun startLiveQuotePolling() {
+        quotePollJob?.cancel()
+        quotePollJob = viewModelScope.launch {
+            while (isActive) {
+                refreshFeedQuotes()
+                delay(32_000)
+            }
+        }
+    }
+
+    fun stopLiveQuotePolling() {
+        quotePollJob?.cancel()
+        quotePollJob = null
+    }
+
+    fun refreshFeedQuotes() {
+        viewModelScope.launch {
+            val posts = _feedState.value.data ?: return@launch
+            if (posts.none { !it.stockSymbol.isNullOrBlank() }) return@launch
+            val merged = feedRepository.refreshQuotesForPosts(posts)
+            _feedState.value = UiState(
+                isLoading = false,
+                data = merged,
+                errorMessage = _feedState.value.errorMessage
+            )
+        }
+    }
 
     fun loadFeed() {
         viewModelScope.launch {

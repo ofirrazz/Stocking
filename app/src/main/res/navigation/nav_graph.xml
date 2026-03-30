@@ -2,7 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/loginFragment">
+    app:startDestination="@id/welcomeFragment">
 
     <action
         android:id="@+id/action_global_loginFragment"
@@ -17,6 +17,18 @@
         app:popUpToInclusive="false" />
 
     <fragment
+        android:id="@+id/welcomeFragment"
+        android:name="com.stocksocial.ui.auth.WelcomeFragment"
+        android:label="@string/welcome_title">
+        <action
+            android:id="@+id/action_welcomeFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_welcomeFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+    </fragment>
+
+    <fragment
         android:id="@+id/loginFragment"
         android:name="com.stocksocial.ui.auth.LoginFragment"
         android:label="@string/login">
@@ -25,7 +37,9 @@
             app:destination="@id/registerFragment" />
         <action
             android:id="@+id/action_loginFragment_to_feedFragment"
-            app:destination="@id/feedFragment" />
+            app:destination="@id/feedFragment"
+            app:popUpTo="@id/welcomeFragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <fragment
@@ -38,7 +52,7 @@
         <action
             android:id="@+id/action_registerFragment_to_feedFragment"
             app:destination="@id/feedFragment"
-            app:popUpTo="@id/registerFragment"
+            app:popUpTo="@id/welcomeFragment"
             app:popUpToInclusive="true" />
     </fragment>
 
@@ -52,12 +66,22 @@
         <action
             android:id="@+id/action_feedFragment_to_postDetailsFragment"
             app:destination="@id/postDetailsFragment" />
+        <action
+            android:id="@+id/action_feedFragment_to_stockDetailsFragment"
+            app:destination="@id/stockDetailsFragment" />
+        <action
+            android:id="@+id/action_feedFragment_to_userProfileFragment"
+            app:destination="@id/userProfileFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/stocksFragment"
         android:name="com.stocksocial.ui.stocks.StocksFragment"
-        android:label="@string/stocks" />
+        android:label="@string/stocks">
+        <action
+            android:id="@+id/action_stocksFragment_to_stockDetailsFragment"
+            app:destination="@id/stockDetailsFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/articlesFragment"
@@ -69,6 +93,15 @@
     </fragment>
 
     <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="com.stocksocial.ui.notifications.NotificationsFragment"
+        android:label="@string/nav_alerts">
+        <action
+            android:id="@+id/action_notificationsFragment_to_stockDetailsFragment"
+            app:destination="@id/stockDetailsFragment" />
+    </fragment>
+
+    <fragment
         android:id="@+id/profileFragment"
         android:name="com.stocksocial.ui.profile.ProfileFragment"
         android:label="@string/profile">
@@ -77,6 +110,44 @@
             app:destination="@id/createPostFragment" />
         <action
             android:id="@+id/action_profileFragment_to_postDetailsFragment"
+            app:destination="@id/postDetailsFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_stockDetailsFragment"
+            app:destination="@id/stockDetailsFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_portfolioFragment"
+            app:destination="@id/portfolioFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/stockDetailsFragment"
+        android:name="com.stocksocial.ui.stocks.StockDetailsFragment"
+        android:label="@string/stock_details">
+        <argument
+            android:name="symbol"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_stockDetailsFragment_to_postDetailsFragment"
+            app:destination="@id/postDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/portfolioFragment"
+        android:name="com.stocksocial.ui.profile.PortfolioFragment"
+        android:label="@string/nav_portfolio" />
+
+    <fragment
+        android:id="@+id/userProfileFragment"
+        android:name="com.stocksocial.ui.profile.UserProfileFragment"
+        android:label="@string/profile">
+        <argument
+            android:name="username"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_userProfileFragment_to_stockDetailsFragment"
+            app:destination="@id/stockDetailsFragment" />
+        <action
+            android:id="@+id/action_userProfileFragment_to_postDetailsFragment"
             app:destination="@id/postDetailsFragment" />
     </fragment>
 
