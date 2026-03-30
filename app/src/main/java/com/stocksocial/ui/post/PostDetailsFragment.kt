@@ -12,6 +12,8 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.FirebaseAuth
+import com.stocksocial.NavGraphDirections
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentPostDetailsBinding
 import com.stocksocial.utils.appViewModelFactory
@@ -24,6 +26,7 @@ class PostDetailsFragment : Fragment() {
     private val viewModel: FeedViewModel by viewModels { appViewModelFactory }
     private var selectedImageUri: Uri? = null
     private var pendingDelete = false
+    private var canEditPost = false
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         selectedImageUri = uri
@@ -48,15 +51,22 @@ class PostDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.pickImageButton.setOnClickListener { pickImage.launch("image/*") }
+        binding.backButton.setOnClickListener { findNavController().navigateUp() }
+        binding.pickImageButton.setOnClickListener {
+            if (canEditPost) {
+                pickImage.launch("image/*")
+            }
+        }
 
         binding.updatePostButton.setOnClickListener {
+            if (!canEditPost) return@setOnClickListener
             pendingDelete = false
             val content = binding.postContentInput.text?.toString()?.trim().orEmpty()
             viewModel.updatePost(args.postId, content, selectedImageUri)
         }
 
         binding.deletePostButton.setOnClickListener {
+            if (!canEditPost) return@setOnClickListener
             pendingDelete = true
             viewModel.deletePost(args.postId)
         }
@@ -65,8 +75,14 @@ class PostDetailsFragment : Fragment() {
             binding.actionProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             state.errorMessage?.let { Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show() }
             state.data?.let { post ->
+                val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+                canEditPost = currentUid != null && currentUid == post.author.id
                 binding.postMetaText.text = "${post.author.username} • ${post.createdAt}"
                 binding.postContentInput.setText(post.content)
+                binding.postContentInput.isEnabled = canEditPost
+                binding.pickImageButton.visibility = if (canEditPost) View.VISIBLE else View.GONE
+                binding.updatePostButton.visibility = if (canEditPost) View.VISIBLE else View.GONE
+                binding.deletePostButton.visibility = if (canEditPost) View.VISIBLE else View.GONE
                 if (selectedImageUri == null) {
                     when {
                         !post.localImagePath.isNullOrBlank() -> {
@@ -105,6 +121,9 @@ class PostDetailsFragment : Fragment() {
                 viewModel.consumePostActionState()
                 if (pendingDelete && findNavController().previousBackStackEntry != null) {
                     findNavController().navigateUp()
+                } else if (!pendingDelete) {
+                    val direction = NavGraphDirections.actionGlobalFeedFragment()
+                    findNavController().navigate(direction)
                 }
                 pendingDelete = false
             }

@@ -14,7 +14,8 @@ import java.text.NumberFormat
 import java.util.Locale
 
 class FeedAdapter(
-    private val onPostClick: (Post) -> Unit
+    private val onPostClick: (Post) -> Unit,
+    private val onShareClick: (Post) -> Unit
 ) : ListAdapter<Post, FeedAdapter.FeedViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FeedViewHolder {
@@ -57,6 +58,7 @@ class FeedAdapter(
             }
 
             root.setOnClickListener { onPostClick(item) }
+            shareAction.setOnClickListener { onShareClick(item) }
         }
     }
 

@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.stocksocial.R
 import com.stocksocial.databinding.FragmentArticlesBinding
 import com.stocksocial.ui.adapters.ArticlesAdapter
 import com.stocksocial.utils.appViewModelFactory
@@ -42,9 +41,7 @@ class ArticlesFragment : Fragment() {
             androidx.recyclerview.widget.LinearLayoutManager(requireContext())
         binding.articlesRecyclerView.adapter = articlesAdapter
 
-        setupCategoryFiltering()
-
-        viewModel.filteredArticlesStateLive.observe(viewLifecycleOwner) { state ->
+        viewModel.articlesStateLive.observe(viewLifecycleOwner) { state ->
             binding.loadingProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             articlesAdapter.submitList(state.data.orEmpty())
             val error = state.errorMessage
@@ -55,22 +52,6 @@ class ArticlesFragment : Fragment() {
         }
 
         viewModel.loadArticles()
-    }
-
-    private fun setupCategoryFiltering() {
-        binding.categoryChipGroup.setOnCheckedStateChangeListener { _, _ ->
-            viewModel.setCategoryFilter(getSelectedCategory())
-        }
-    }
-
-    private fun getSelectedCategory(): String? {
-        return when (binding.categoryChipGroup.checkedChipId) {
-            R.id.chipEarnings -> getString(R.string.category_earnings)
-            R.id.chipEconomics -> getString(R.string.category_economics)
-            R.id.chipTechnology -> getString(R.string.category_technology)
-            R.id.chipAutomotive -> getString(R.string.category_automotive)
-            else -> null
-        }
     }
 
     override fun onDestroyView() {

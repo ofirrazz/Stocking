@@ -10,6 +10,12 @@
         app:popUpTo="@id/nav_graph"
         app:popUpToInclusive="true" />
 
+    <action
+        android:id="@+id/action_global_feedFragment"
+        app:destination="@id/feedFragment"
+        app:popUpTo="@id/nav_graph"
+        app:popUpToInclusive="false" />
+
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.stocksocial.ui.auth.LoginFragment"

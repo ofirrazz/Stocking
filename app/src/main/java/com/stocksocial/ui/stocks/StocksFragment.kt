@@ -1,12 +1,16 @@
 package com.stocksocial.ui.stocks
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.stocksocial.R
 import com.stocksocial.databinding.FragmentStocksBinding
 import com.stocksocial.ui.adapters.MarketIndexAdapter
 import com.stocksocial.ui.adapters.TopSignalsAdapter
@@ -21,7 +25,9 @@ class StocksFragment : Fragment() {
     private val marketIndexAdapter = MarketIndexAdapter()
     private val trendingStocksAdapter = TrendingStocksAdapter()
     private val watchlistAdapter = WatchlistAdapter()
+    private val recentlyAdapter = WatchlistAdapter()
     private val topSignalsAdapter = TopSignalsAdapter()
+    private var lastShownError: String? = null
     private var _binding: FragmentStocksBinding? = null
     private val binding get() = _binding!!
 
@@ -49,18 +55,57 @@ class StocksFragment : Fragment() {
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         binding.watchlistRecyclerView.adapter = watchlistAdapter
 
+        binding.recentlyRecyclerView.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.recentlyRecyclerView.adapter = recentlyAdapter
+
         binding.topSignalsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.topSignalsRecyclerView.adapter = topSignalsAdapter
+
+        binding.searchInputLayout.setEndIconOnClickListener {
+            submitSearch()
+        }
+        binding.searchInput.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)
+            ) {
+                submitSearch()
+                true
+            } else {
+                false
+            }
+        }
 
         viewModel.stocksStateLive.observe(viewLifecycleOwner) { state ->
             val data = state.data ?: return@observe
             marketIndexAdapter.submitList(data.marketIndices)
             trendingStocksAdapter.submitList(data.trendingStocks)
             watchlistAdapter.submitList(data.watchlist)
+            recentlyAdapter.submitList(data.recentSearches)
             topSignalsAdapter.submitList(data.topSignals)
+            binding.recentlySectionTitle.visibility =
+                if (data.recentSearches.isEmpty()) View.GONE else View.VISIBLE
+            binding.recentlyRecyclerView.visibility =
+                if (data.recentSearches.isEmpty()) View.GONE else View.VISIBLE
+            val error = state.errorMessage
+            if (!error.isNullOrBlank() && error != lastShownError) {
+                lastShownError = error
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+            }
         }
 
         viewModel.loadStocks()
+    }
+
+    private fun submitSearch() {
+        val query = binding.searchInput.text?.toString()?.trim().orEmpty()
+        if (query.isBlank()) {
+            Toast.makeText(requireContext(), R.string.enter_stock_symbol, Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModel.searchStock(query)
+        binding.searchInput.text?.clear()
+        binding.searchInput.clearFocus()
     }
 
     override fun onDestroyView() {

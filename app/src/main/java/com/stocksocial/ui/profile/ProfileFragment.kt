@@ -5,10 +5,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.graphics.drawable.ColorDrawable
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -19,15 +24,27 @@ import com.stocksocial.databinding.FragmentProfileBinding
 import com.stocksocial.ui.adapters.UserPostsAdapter
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.AuthViewModel
+import com.stocksocial.viewmodel.FeedViewModel
 import com.stocksocial.viewmodel.ProfileViewModel
 
 class ProfileFragment : Fragment() {
 
     private val profileViewModel: ProfileViewModel by viewModels { appViewModelFactory }
+    private val feedViewModel: FeedViewModel by viewModels { appViewModelFactory }
     private val authViewModel: AuthViewModel by viewModels { appViewModelFactory }
-    private val userPostsAdapter = UserPostsAdapter { post ->
-        val direction = ProfileFragmentDirections.actionProfileFragmentToPostDetailsFragment(post.id)
-        findNavController().navigate(direction)
+    private val userPostsAdapter by lazy {
+        UserPostsAdapter(
+            onEditClick = { post ->
+                val direction = ProfileFragmentDirections.actionProfileFragmentToPostDetailsFragment(post.id)
+                findNavController().navigate(direction)
+            },
+            onLikeClick = { post ->
+                profileViewModel.likePost(post.id)
+            },
+            onShareClick = { post ->
+                sharePost(post)
+            }
+        )
     }
     private var lastShownError: String? = null
     private var isProfileLoading = false
@@ -37,6 +54,12 @@ class ProfileFragment : Fragment() {
     private val pickProfileImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             profileViewModel.updateProfile(newName = null, newImageUri = uri)
+        }
+    }
+
+    private val pickVideoToShare = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            shareVideoUri(uri)
         }
     }
 
@@ -69,6 +92,9 @@ class ProfileFragment : Fragment() {
             val direction = ProfileFragmentDirections.actionProfileFragmentToCreatePostFragment()
             findNavController().navigate(direction)
         }
+        binding.shareStockButton.setOnClickListener { showShareStockDialog() }
+        binding.uploadVideoButton.setOnClickListener { pickVideoToShare.launch("video/*") }
+        binding.followUserButton.setOnClickListener { showFollowUserDialog() }
 
         binding.fullNameText.setOnClickListener { showEditNameDialog() }
         binding.profileImage.setOnClickListener { pickProfileImage.launch("image/*") }
@@ -118,6 +144,41 @@ class ProfileFragment : Fragment() {
             }
         }
 
+        profileViewModel.followStateLive.observe(viewLifecycleOwner) { state ->
+            if (!state.errorMessage.isNullOrBlank()) {
+                Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeFollowState()
+            } else if (state.data != null) {
+                Toast.makeText(requireContext(), R.string.follow_success, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeFollowState()
+            }
+        }
+
+        profileViewModel.likePostStateLive.observe(viewLifecycleOwner) { state ->
+            if (!state.errorMessage.isNullOrBlank()) {
+                Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeLikePostState()
+            } else if (state.data != null) {
+                Toast.makeText(requireContext(), R.string.post_liked, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeLikePostState()
+            }
+        }
+
+        feedViewModel.postPublishedLive.observe(viewLifecycleOwner) { published ->
+            if (published) {
+                Toast.makeText(requireContext(), R.string.shared_as_post, Toast.LENGTH_SHORT).show()
+                feedViewModel.consumePostPublished()
+                profileViewModel.loadMyPosts()
+            }
+        }
+
+        feedViewModel.publishErrorLive.observe(viewLifecycleOwner) { err ->
+            if (!err.isNullOrBlank()) {
+                Toast.makeText(requireContext(), err, Toast.LENGTH_SHORT).show()
+                feedViewModel.consumePublishError()
+            }
+        }
+
         profileViewModel.loadProfile()
         profileViewModel.loadMyPosts()
     }
@@ -152,5 +213,82 @@ class ProfileFragment : Fragment() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun showFollowUserDialog() {
+        val dialog = android.app.Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_people_search, null)
+        dialog.setContentView(dialogView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+        val searchLayout = dialogView.findViewById<TextInputLayout>(R.id.searchInputLayout)
+        val input = dialogView.findViewById<TextInputEditText>(R.id.searchInput)
+        val followButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.followButton)
+        val cancelButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.cancelButton)
+
+        searchLayout.hint = getString(R.string.search_people_hint)
+        val performFollow = {
+            val username = input.text?.toString()?.trim().orEmpty()
+            if (username.isNotBlank()) {
+                profileViewModel.followUserByUsername(username)
+                dialog.dismiss()
+            }
+        }
+        searchLayout.setEndIconOnClickListener { performFollow() }
+        input.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performFollow()
+                true
+            } else {
+                false
+            }
+        }
+        followButton.setOnClickListener { performFollow() }
+        cancelButton.setOnClickListener { dialog.dismiss() }
+        dialog.show()
+    }
+
+    private fun showShareStockDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = getString(R.string.stock_symbol_hint)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.share_stock)
+            .setView(input)
+            .setPositiveButton(R.string.share) { _, _ ->
+                val symbol = input.text?.toString()?.trim().orEmpty().uppercase()
+                if (symbol.isBlank()) return@setPositiveButton
+                val postText = getString(R.string.share_stock_text_template, symbol)
+                feedViewModel.publishPost(postText, null)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun shareVideoUri(uri: Uri) {
+        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "video/*"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(android.content.Intent.createChooser(shareIntent, getString(R.string.upload_video)))
+    }
+
+    private fun sharePost(post: com.stocksocial.model.Post) {
+        val postText = buildString {
+            append("Shared from @${post.author.username}:\n")
+            append(post.content)
+            if (!post.stockSymbol.isNullOrBlank()) {
+                append("\n\nTicker: ${post.stockSymbol}")
+            }
+            if (!post.imageUrl.isNullOrBlank()) {
+                append("\nImage: ${post.imageUrl}")
+            }
+            if (!post.videoUrl.isNullOrBlank()) {
+                append("\nVideo: ${post.videoUrl}")
+            }
+        }
+        feedViewModel.publishPost(postText, null)
     }
 }

@@ -14,7 +14,9 @@ import java.text.NumberFormat
 import java.util.Locale
 
 class UserPostsAdapter(
-    private val onPostClick: (Post) -> Unit
+    private val onEditClick: (Post) -> Unit,
+    private val onLikeClick: (Post) -> Unit,
+    private val onShareClick: (Post) -> Unit
 ) : ListAdapter<Post, UserPostsAdapter.UserPostViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserPostViewHolder {
@@ -57,7 +59,10 @@ class UserPostsAdapter(
                 else -> imagePreview.setImageDrawable(null)
             }
             videoPreviewContainer.visibility = if (item.videoUrl != null) View.VISIBLE else View.GONE
-            root.setOnClickListener { onPostClick(item) }
+            root.setOnClickListener { onEditClick(item) }
+            commentAction.setOnClickListener { onEditClick(item) }
+            likeAction.setOnClickListener { onLikeClick(item) }
+            shareAction.setOnClickListener { onShareClick(item) }
         }
     }
 

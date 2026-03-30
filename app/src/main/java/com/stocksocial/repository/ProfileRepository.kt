@@ -2,6 +2,7 @@ package com.stocksocial.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
@@ -104,6 +105,81 @@ class ProfileRepository(
             getProfile()
         } catch (e: Exception) {
             RepositoryResult.Error(e.message ?: "Failed to update profile", e)
+        }
+    }
+
+    suspend fun followUserByUsername(username: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val current = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val normalized = username.trim()
+        if (normalized.isBlank()) {
+            return@withContext RepositoryResult.Error("Enter a username")
+        }
+        try {
+            val targetSnapshot = firestore.collection("users")
+                .whereEqualTo("username", normalized)
+                .limit(1)
+                .get()
+                .await()
+            val targetDoc = targetSnapshot.documents.firstOrNull()
+                ?: return@withContext RepositoryResult.Error("User not found")
+            val targetId = targetDoc.id
+            if (targetId == current.uid) {
+                return@withContext RepositoryResult.Error("You cannot follow yourself")
+            }
+
+            val now = System.currentTimeMillis()
+            firestore.collection("users")
+                .document(current.uid)
+                .collection("following")
+                .document(targetId)
+                .set(
+                    mapOf(
+                        "userId" to targetId,
+                        "username" to (targetDoc.getString("username") ?: normalized),
+                        "followedAt" to now
+                    )
+                )
+                .await()
+
+            firestore.collection("users")
+                .document(targetId)
+                .collection("followers")
+                .document(current.uid)
+                .set(
+                    mapOf(
+                        "userId" to current.uid,
+                        "username" to (current.displayName ?: current.email?.substringBefore("@") ?: "user"),
+                        "followedAt" to now
+                    )
+                )
+                .await()
+
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to follow user", e)
+        }
+    }
+
+    suspend fun likePost(postId: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val current = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        try {
+            firestore.collection("posts")
+                .document(postId)
+                .update(
+                    mapOf(
+                        "likesCount" to FieldValue.increment(1),
+                        "lastLikedBy" to current.uid
+                    )
+                )
+                .await()
+
+            val local = postDao.getById(postId)
+            if (local != null) {
+                postDao.upsert(local.copy(likesCount = local.likesCount + 1))
+            }
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to like post", e)
         }
     }
 }

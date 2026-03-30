@@ -24,34 +24,20 @@ class ArticlesViewModel(
     val articleDetailsState: StateFlow<UiState<Article>> = _articleDetailsState.asStateFlow()
     val articleDetailsStateLive: LiveData<UiState<Article>> = _articleDetailsState.asLiveData()
 
-    private val _filteredArticlesState = MutableStateFlow(UiState<List<Article>>())
-    val filteredArticlesState: StateFlow<UiState<List<Article>>> = _filteredArticlesState.asStateFlow()
-    val filteredArticlesStateLive: LiveData<UiState<List<Article>>> = _filteredArticlesState.asLiveData()
-    private var allArticles: List<Article> = emptyList()
-    private var selectedCategory: String? = null
-
     fun loadArticles() {
         viewModelScope.launch {
             val cached = articlesRepository.getCachedArticles()
-            allArticles = cached
             _articlesState.value = UiState(
                 isLoading = true,
                 data = cached.takeIf { it.isNotEmpty() }
             )
-            publishFilteredState(isLoading = true, errorMessage = null)
             when (val result = articlesRepository.getArticles()) {
                 is RepositoryResult.Success -> {
-                    allArticles = result.data
                     _articlesState.value = UiState(data = result.data)
-                    publishFilteredState(isLoading = false, errorMessage = null)
                 }
                 is RepositoryResult.Error -> {
                     _articlesState.value = UiState(
                         data = cached.takeIf { it.isNotEmpty() },
-                        errorMessage = result.message
-                    )
-                    publishFilteredState(
-                        isLoading = false,
                         errorMessage = result.message
                     )
                 }
@@ -71,26 +57,5 @@ class ArticlesViewModel(
                 }
             }
         }
-    }
-
-    fun setCategoryFilter(category: String?) {
-        selectedCategory = category
-        publishFilteredState()
-    }
-
-    private fun publishFilteredState(
-        isLoading: Boolean = false,
-        errorMessage: String? = null
-    ) {
-        val filtered = if (selectedCategory.isNullOrBlank()) {
-            allArticles
-        } else {
-            allArticles.filter { it.category.equals(selectedCategory, ignoreCase = true) }
-        }
-        _filteredArticlesState.value = UiState(
-            isLoading = isLoading,
-            data = filtered,
-            errorMessage = errorMessage
-        )
     }
 }
