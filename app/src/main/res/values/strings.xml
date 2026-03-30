@@ -6,6 +6,8 @@
     <string name="stocks">Stocks</string>
     <string name="stocks_subtitle">Discover movers, trends and actionable signals</string>
     <string name="search_stocks_hint">Search symbols, companies or ideas</string>
+    <string name="recently_searched">Recently Searched</string>
+    <string name="enter_stock_symbol">Enter stock symbol</string>
     <string name="market_indices">Market Indices</string>
     <string name="trending_stocks">Trending Stocks</string>
     <string name="watchlist_section_title">Watchlist</string>
@@ -37,6 +39,7 @@
     <string name="profile_post_video_preview">Video preview</string>
     <string name="action_like">Like</string>
     <string name="action_comment">Comment</string>
+    <string name="action_edit">Edit</string>
     <string name="action_share">Share</string>
     <string name="login">Login</string>
     <string name="login_subtitle">Welcome back to your stock community</string>
@@ -54,6 +57,7 @@
     <string name="password">Password</string>
     <string name="username">Username</string>
     <string name="publish">Publish</string>
+    <string name="back">Back</string>
     <string name="what_is_on_your_mind">What is on your mind?</string>
     <string name="post_details_placeholder">Post content placeholder</string>
     <string name="article_details_placeholder">Article content placeholder</string>
@@ -67,6 +71,9 @@
     <string name="edit_profile_name">Edit profile name</string>
     <string name="save">Save</string>
     <string name="search_follow_user">Search and Follow User</string>
+    <string name="follow_user">Follow User</string>
+    <string name="search_people">Search People</string>
+    <string name="search_people_hint">Search people</string>
     <string name="follow">Follow</string>
     <string name="follow_success">User followed successfully</string>
     <string name="share">Share</string>
@@ -76,4 +83,6 @@
     <string name="fill_register_fields">Fill all fields</string>
     <string name="post_needs_content">Add text or an image</string>
     <string name="published_ok">Post published</string>
+    <string name="post_liked">Post liked</string>
+    <string name="shared_as_post">Shared as a new post</string>
 </resources>

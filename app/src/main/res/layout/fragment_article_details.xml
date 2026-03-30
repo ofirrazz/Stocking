@@ -15,10 +15,20 @@
         android:paddingEnd="20dp"
         android:paddingBottom="24dp">
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/backButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/back"
+            android:textAllCaps="false"
+            android:textColor="@color/feed_text_primary" />
+
         <TextView
             android:id="@+id/categoryText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:background="@drawable/bg_stock_info_chip"
             android:paddingStart="9dp"
             android:paddingTop="4dp"

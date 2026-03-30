@@ -23,6 +23,7 @@ class StocksViewModel(
     private val _stocksState = MutableStateFlow(UiState(data = StocksUiData()))
     val stocksState: StateFlow<UiState<StocksUiData>> = _stocksState.asStateFlow()
     val stocksStateLive: LiveData<UiState<StocksUiData>> = _stocksState.asLiveData()
+    private val recentSearches = mutableListOf<Stock>()
 
     fun loadStocks() {
         viewModelScope.launch {
@@ -65,7 +66,8 @@ class StocksViewModel(
                     marketIndices = marketIndices,
                     trendingStocks = trendingStocks,
                     watchlist = watchlistStocks,
-                    topSignals = fallback.topSignals
+                    topSignals = fallback.topSignals,
+                    recentSearches = recentSearches.toList()
                 ),
                 errorMessage = firstError
             )
@@ -81,8 +83,34 @@ class StocksViewModel(
             marketIndices = DummyData.marketIndices(),
             trendingStocks = DummyData.trendingStocks(),
             watchlist = watchlistOverride ?: DummyData.watchlistStocks(),
-            topSignals = DummyData.topSignals()
+            topSignals = DummyData.topSignals(),
+            recentSearches = recentSearches.toList()
         )
+    }
+
+    fun searchStock(symbolQuery: String) {
+        viewModelScope.launch {
+            val currentData = _stocksState.value.data ?: StocksUiData()
+            when (val result = watchlistRepository.getStockBySymbol(symbolQuery)) {
+                is RepositoryResult.Success -> {
+                    val found = result.data
+                    recentSearches.removeAll { it.symbol.equals(found.symbol, ignoreCase = true) }
+                    recentSearches.add(0, found)
+                    if (recentSearches.size > 8) {
+                        recentSearches.removeLast()
+                    }
+                    _stocksState.value = UiState(
+                        data = currentData.copy(recentSearches = recentSearches.toList())
+                    )
+                }
+                is RepositoryResult.Error -> {
+                    _stocksState.value = UiState(
+                        data = currentData,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -90,5 +118,6 @@ data class StocksUiData(
     val marketIndices: List<Stock> = emptyList(),
     val trendingStocks: List<Stock> = emptyList(),
     val watchlist: List<Stock> = emptyList(),
-    val topSignals: List<StockSignal> = emptyList()
+    val topSignals: List<StockSignal> = emptyList(),
+    val recentSearches: List<Stock> = emptyList()
 )

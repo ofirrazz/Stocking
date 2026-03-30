@@ -14,5 +14,15 @@
         <item name="android:windowBackground">@color/feed_background</item>
         <item name="android:statusBarColor" tools:targetApi="l">@color/feed_background</item>
         <item name="android:navigationBarColor">@color/feed_background</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.StockSocial.MaterialAlertDialog</item>
+    </style>
+
+    <style name="ThemeOverlay.StockSocial.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="backgroundTint">@color/feed_card_background</item>
+        <item name="colorOnSurface">@color/feed_text_primary</item>
+        <item name="android:textColorPrimary">@color/feed_text_primary</item>
+        <item name="android:textColorSecondary">@color/feed_text_secondary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Material3.Button.TextButton.Dialog</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Material3.Button.TextButton.Dialog</item>
     </style>
 </resources>

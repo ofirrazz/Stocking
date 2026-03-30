@@ -34,6 +34,10 @@ class ProfileViewModel(
     val followState: StateFlow<UiState<Unit>> = _followState.asStateFlow()
     val followStateLive: LiveData<UiState<Unit>> = _followState.asLiveData()
 
+    private val _likePostState = MutableStateFlow(UiState<Unit>())
+    val likePostState: StateFlow<UiState<Unit>> = _likePostState.asStateFlow()
+    val likePostStateLive: LiveData<UiState<Unit>> = _likePostState.asLiveData()
+
     fun loadProfile() {
         viewModelScope.launch {
             _profileState.value = UiState(isLoading = true)
@@ -93,5 +97,24 @@ class ProfileViewModel(
 
     fun consumeFollowState() {
         _followState.value = UiState()
+    }
+
+    fun likePost(postId: String) {
+        viewModelScope.launch {
+            _likePostState.value = UiState(isLoading = true)
+            when (val result = profileRepository.likePost(postId)) {
+                is RepositoryResult.Success -> {
+                    _likePostState.value = UiState(data = Unit)
+                    loadMyPosts()
+                }
+                is RepositoryResult.Error -> {
+                    _likePostState.value = UiState(errorMessage = result.message)
+                }
+            }
+        }
+    }
+
+    fun consumeLikePostState() {
+        _likePostState.value = UiState()
     }
 }

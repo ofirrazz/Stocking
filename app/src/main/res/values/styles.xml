@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.StockSocial.SearchBar" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/feed_chip_background</item>
+        <item name="boxCornerRadiusTopStart">14dp</item>
+        <item name="boxCornerRadiusTopEnd">14dp</item>
+        <item name="boxCornerRadiusBottomStart">14dp</item>
+        <item name="boxCornerRadiusBottomEnd">14dp</item>
+        <item name="boxStrokeColor">@color/feed_card_stroke</item>
+        <item name="hintTextColor">@color/feed_text_muted</item>
+        <item name="endIconMode">custom</item>
+        <item name="endIconDrawable">@android:drawable/ic_menu_search</item>
+    </style>
+
+    <style name="Widget.StockSocial.SearchInput" parent="Widget.Material3.TextInputEditText.FilledBox">
+        <item name="android:textColor">@color/feed_text_primary</item>
+        <item name="android:textColorHint">@color/feed_text_muted</item>
+    </style>
+</resources>

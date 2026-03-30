@@ -2,6 +2,7 @@ package com.stocksocial.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
@@ -156,6 +157,29 @@ class ProfileRepository(
             RepositoryResult.Success(Unit)
         } catch (e: Exception) {
             RepositoryResult.Error(e.message ?: "Failed to follow user", e)
+        }
+    }
+
+    suspend fun likePost(postId: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val current = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        try {
+            firestore.collection("posts")
+                .document(postId)
+                .update(
+                    mapOf(
+                        "likesCount" to FieldValue.increment(1),
+                        "lastLikedBy" to current.uid
+                    )
+                )
+                .await()
+
+            val local = postDao.getById(postId)
+            if (local != null) {
+                postDao.upsert(local.copy(likesCount = local.likesCount + 1))
+            }
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to like post", e)
         }
     }
 }

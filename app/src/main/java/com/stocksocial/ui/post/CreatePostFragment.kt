@@ -43,6 +43,8 @@ class CreatePostFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.backButton.setOnClickListener { findNavController().navigateUp() }
+
         binding.pickImageButton.setOnClickListener {
             pickImage.launch("image/*")
         }

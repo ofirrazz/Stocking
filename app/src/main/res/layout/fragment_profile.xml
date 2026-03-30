@@ -250,12 +250,12 @@
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/searchFollowUserButton"
+                android:id="@+id/followUserButton"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
                 android:layout_marginTop="10dp"
-                android:text="@string/search_follow_user"
+                android:text="@string/follow_user"
                 android:textAllCaps="false"
                 android:textColor="@color/feed_text_primary"
                 app:cornerRadius="12dp"

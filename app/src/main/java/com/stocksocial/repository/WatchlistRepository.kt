@@ -56,6 +56,33 @@ class WatchlistRepository(
         }
     }
 
+    suspend fun getStockBySymbol(symbol: String): RepositoryResult<Stock> = withContext(Dispatchers.IO) {
+        if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
+            return@withContext RepositoryResult.Error("Add FINNHUB_TOKEN in local.properties (see README).")
+        }
+        val normalized = symbol.trim().uppercase()
+        if (normalized.isBlank()) {
+            return@withContext RepositoryResult.Error("Enter a stock symbol")
+        }
+        try {
+            val response = apiService.getQuote(symbol = normalized)
+            val body = response.body()
+            if (!response.isSuccessful || body == null || body.c == 0.0) {
+                return@withContext RepositoryResult.Error("Stock symbol not found")
+            }
+            RepositoryResult.Success(
+                Stock(
+                    symbol = normalized,
+                    name = SYMBOL_NAMES[normalized] ?: normalized,
+                    price = body.c,
+                    dailyChangePercent = body.dp
+                )
+            )
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to load stock", e)
+        }
+    }
+
     private suspend fun fetchStocks(symbols: List<String>): List<Stock> = coroutineScope {
         symbols.map { symbol ->
             async {

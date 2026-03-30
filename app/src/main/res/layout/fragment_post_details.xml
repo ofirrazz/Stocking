@@ -6,16 +6,35 @@
     android:background="@color/feed_background"
     android:padding="20dp">
 
-    <TextView
-        android:id="@+id/postTitleText"
+    <LinearLayout
+        android:id="@+id/topBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/post_details"
-        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-        android:textColor="@color/feed_text_primary"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/backButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/back"
+            android:textAllCaps="false"
+            android:textColor="@color/feed_text_primary" />
+
+        <TextView
+            android:id="@+id/postTitleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/post_details"
+            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+            android:textColor="@color/feed_text_primary" />
+    </LinearLayout>
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/postCard"
@@ -27,7 +46,7 @@
         app:cardElevation="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/postTitleText"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
         app:strokeColor="@color/feed_card_stroke"
         app:strokeWidth="1dp">
 
