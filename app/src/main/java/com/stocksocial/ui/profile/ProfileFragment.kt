@@ -40,6 +40,12 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    private val pickVideoToShare = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            shareVideoUri(uri)
+        }
+    }
+
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
@@ -69,6 +75,9 @@ class ProfileFragment : Fragment() {
             val direction = ProfileFragmentDirections.actionProfileFragmentToCreatePostFragment()
             findNavController().navigate(direction)
         }
+        binding.shareStockButton.setOnClickListener { showShareStockDialog() }
+        binding.uploadVideoButton.setOnClickListener { pickVideoToShare.launch("video/*") }
+        binding.searchFollowUserButton.setOnClickListener { showFollowUserDialog() }
 
         binding.fullNameText.setOnClickListener { showEditNameDialog() }
         binding.profileImage.setOnClickListener { pickProfileImage.launch("image/*") }
@@ -118,6 +127,16 @@ class ProfileFragment : Fragment() {
             }
         }
 
+        profileViewModel.followStateLive.observe(viewLifecycleOwner) { state ->
+            if (!state.errorMessage.isNullOrBlank()) {
+                Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeFollowState()
+            } else if (state.data != null) {
+                Toast.makeText(requireContext(), R.string.follow_success, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeFollowState()
+            }
+        }
+
         profileViewModel.loadProfile()
         profileViewModel.loadMyPosts()
     }
@@ -152,5 +171,54 @@ class ProfileFragment : Fragment() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun showFollowUserDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = getString(R.string.username)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.search_follow_user)
+            .setView(input)
+            .setPositiveButton(R.string.follow) { _, _ ->
+                val username = input.text?.toString()?.trim().orEmpty()
+                if (username.isNotBlank()) {
+                    profileViewModel.followUserByUsername(username)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showShareStockDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = getString(R.string.stock_symbol_hint)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.share_stock)
+            .setView(input)
+            .setPositiveButton(R.string.share) { _, _ ->
+                val symbol = input.text?.toString()?.trim().orEmpty().uppercase()
+                if (symbol.isBlank()) return@setPositiveButton
+                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(
+                        android.content.Intent.EXTRA_TEXT,
+                        getString(R.string.share_stock_text_template, symbol)
+                    )
+                }
+                startActivity(android.content.Intent.createChooser(shareIntent, getString(R.string.share_stock)))
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun shareVideoUri(uri: Uri) {
+        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "video/*"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(android.content.Intent.createChooser(shareIntent, getString(R.string.upload_video)))
     }
 }

@@ -30,6 +30,10 @@ class ProfileViewModel(
     val profileUpdateState: StateFlow<UiState<User>> = _profileUpdateState.asStateFlow()
     val profileUpdateStateLive: LiveData<UiState<User>> = _profileUpdateState.asLiveData()
 
+    private val _followState = MutableStateFlow(UiState<Unit>())
+    val followState: StateFlow<UiState<Unit>> = _followState.asStateFlow()
+    val followStateLive: LiveData<UiState<Unit>> = _followState.asLiveData()
+
     fun loadProfile() {
         viewModelScope.launch {
             _profileState.value = UiState(isLoading = true)
@@ -75,5 +79,19 @@ class ProfileViewModel(
 
     fun consumeProfileUpdateState() {
         _profileUpdateState.value = UiState()
+    }
+
+    fun followUserByUsername(username: String) {
+        viewModelScope.launch {
+            _followState.value = UiState(isLoading = true)
+            when (val result = profileRepository.followUserByUsername(username)) {
+                is RepositoryResult.Success -> _followState.value = UiState(data = Unit)
+                is RepositoryResult.Error -> _followState.value = UiState(errorMessage = result.message)
+            }
+        }
+    }
+
+    fun consumeFollowState() {
+        _followState.value = UiState()
     }
 }

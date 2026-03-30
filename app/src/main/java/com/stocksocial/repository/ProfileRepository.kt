@@ -106,4 +106,56 @@ class ProfileRepository(
             RepositoryResult.Error(e.message ?: "Failed to update profile", e)
         }
     }
+
+    suspend fun followUserByUsername(username: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val current = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val normalized = username.trim()
+        if (normalized.isBlank()) {
+            return@withContext RepositoryResult.Error("Enter a username")
+        }
+        try {
+            val targetSnapshot = firestore.collection("users")
+                .whereEqualTo("username", normalized)
+                .limit(1)
+                .get()
+                .await()
+            val targetDoc = targetSnapshot.documents.firstOrNull()
+                ?: return@withContext RepositoryResult.Error("User not found")
+            val targetId = targetDoc.id
+            if (targetId == current.uid) {
+                return@withContext RepositoryResult.Error("You cannot follow yourself")
+            }
+
+            val now = System.currentTimeMillis()
+            firestore.collection("users")
+                .document(current.uid)
+                .collection("following")
+                .document(targetId)
+                .set(
+                    mapOf(
+                        "userId" to targetId,
+                        "username" to (targetDoc.getString("username") ?: normalized),
+                        "followedAt" to now
+                    )
+                )
+                .await()
+
+            firestore.collection("users")
+                .document(targetId)
+                .collection("followers")
+                .document(current.uid)
+                .set(
+                    mapOf(
+                        "userId" to current.uid,
+                        "username" to (current.displayName ?: current.email?.substringBefore("@") ?: "user"),
+                        "followedAt" to now
+                    )
+                )
+                .await()
+
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to follow user", e)
+        }
+    }
 }

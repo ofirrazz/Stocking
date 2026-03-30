@@ -66,6 +66,12 @@
     <string name="profile_updated">Profile updated</string>
     <string name="edit_profile_name">Edit profile name</string>
     <string name="save">Save</string>
+    <string name="search_follow_user">Search and Follow User</string>
+    <string name="follow">Follow</string>
+    <string name="follow_success">User followed successfully</string>
+    <string name="share">Share</string>
+    <string name="stock_symbol_hint">Stock symbol (e.g. AAPL)</string>
+    <string name="share_stock_text_template">Check out %1$s on StockSocial!</string>
     <string name="fill_login_fields">Enter email and password</string>
     <string name="fill_register_fields">Fill all fields</string>
     <string name="post_needs_content">Add text or an image</string>
