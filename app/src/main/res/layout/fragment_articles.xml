@@ -129,4 +129,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/categoryScroll" />
 
+    <ProgressBar
+        android:id="@+id/loadingProgress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/articlesRecyclerView"
+        app:layout_constraintEnd_toEndOf="@id/articlesRecyclerView"
+        app:layout_constraintStart_toStartOf="@id/articlesRecyclerView"
+        app:layout_constraintTop_toTopOf="@id/articlesRecyclerView" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

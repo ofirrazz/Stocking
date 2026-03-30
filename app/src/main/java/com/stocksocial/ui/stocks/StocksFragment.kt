@@ -60,7 +60,7 @@ class StocksFragment : Fragment() {
             topSignalsAdapter.submitList(data.topSignals)
         }
 
-        viewModel.loadMockStocks()
+        viewModel.loadStocks()
     }
 
     override fun onDestroyView() {

@@ -108,6 +108,16 @@
                 android:textStyle="bold"
                 app:backgroundTint="@color/nav_item_color"
                 app:cornerRadius="14dp" />
+
+            <ProgressBar
+                android:id="@+id/publishProgress"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

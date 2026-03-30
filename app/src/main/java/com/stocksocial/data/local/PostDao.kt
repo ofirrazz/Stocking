@@ -25,6 +25,9 @@ interface PostDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: CachedPostEntity)
 
+    @Query("DELETE FROM posts WHERE id = :id")
+    suspend fun deleteById(id: String)
+
     @Query("DELETE FROM posts")
     suspend fun deleteAll()
 }

@@ -25,14 +25,10 @@ class WatchlistAdapter : RecyclerView.Adapter<WatchlistAdapter.StockViewHolder>(
         val item = items[position]
         holder.binding.symbolText.text = item.symbol
         holder.binding.nameText.text = item.name
-        holder.binding.priceText.text = "$${"%.2f".format(item.price)}"
-        val change = "${if (item.dailyChangePercent >= 0) "+" else ""}${"%.2f".format(item.dailyChangePercent)}%"
-        holder.binding.changeText.text = change
+        holder.binding.priceText.text = StockUiFormatter.formatPrice(item.price)
+        holder.binding.changeText.text = StockUiFormatter.formatChangePercent(item.dailyChangePercent)
         holder.binding.changeText.setTextColor(
-            holder.binding.root.context.getColor(
-                if (item.dailyChangePercent >= 0) com.stocksocial.R.color.feed_accent_green
-                else com.stocksocial.R.color.feed_accent_red
-            )
+            StockUiFormatter.resolveChangeColor(holder.binding.root.context, item.dailyChangePercent)
         )
     }
 

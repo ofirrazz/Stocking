@@ -11,6 +11,7 @@ import com.stocksocial.repository.AuthRepository
 import com.stocksocial.repository.FeedRepository
 import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.repository.WatchlistRepository
+import com.stocksocial.viewmodel.AppViewModelFactory
 
 class AppContainer(context: Context) {
 
@@ -47,9 +48,20 @@ class AppContainer(context: Context) {
         ProfileRepository(
             firestore = FirebaseFirestore.getInstance(),
             auth = FirebaseAuth.getInstance(),
-            postDao = database.postDao()
+            postDao = database.postDao(),
+            storage = FirebaseStorage.getInstance()
         )
     }
 
-    val watchlistRepository: WatchlistRepository by lazy { WatchlistRepository() }
+    val watchlistRepository: WatchlistRepository by lazy { WatchlistRepository(apiService = apiService) }
+
+    val viewModelFactory: AppViewModelFactory by lazy {
+        AppViewModelFactory(
+            authRepository = authRepository,
+            feedRepository = feedRepository,
+            profileRepository = profileRepository,
+            articlesRepository = articlesRepository,
+            watchlistRepository = watchlistRepository
+        )
+    }
 }

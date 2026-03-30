@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.stocksocial.utils.AppContainer
 
 class StockSocialApp : Application() {
@@ -12,7 +13,16 @@ class StockSocialApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        configureFirestorePersistence()
         hookFirebase()
+    }
+
+    private fun configureFirestorePersistence() {
+        val firestore = FirebaseFirestore.getInstance()
+        val settings = FirebaseFirestoreSettings.Builder()
+            .setPersistenceEnabled(false)
+            .build()
+        firestore.firestoreSettings = settings
     }
 
     private fun hookFirebase() {

@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -21,6 +22,7 @@ class ArticlesFragment : Fragment() {
             .actionArticlesFragmentToArticleDetailsFragment(article.id)
         findNavController().navigate(direction)
     }
+    private var lastShownError: String? = null
     private var _binding: FragmentArticlesBinding? = null
     private val binding get() = _binding!!
 
@@ -42,8 +44,14 @@ class ArticlesFragment : Fragment() {
 
         setupCategoryFiltering()
 
-        viewModel.filteredArticlesState.observe(viewLifecycleOwner) { state ->
+        viewModel.filteredArticlesStateLive.observe(viewLifecycleOwner) { state ->
+            binding.loadingProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             articlesAdapter.submitList(state.data.orEmpty())
+            val error = state.errorMessage
+            if (!error.isNullOrBlank() && error != lastShownError) {
+                lastShownError = error
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+            }
         }
 
         viewModel.loadArticles()

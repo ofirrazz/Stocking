@@ -64,6 +64,12 @@ class CreatePostFragment : Fragment() {
             }
         }
 
+        viewModel.isPublishingLive.observe(viewLifecycleOwner) { publishing ->
+            binding.publishProgress.visibility = if (publishing) View.VISIBLE else View.GONE
+            binding.publishPostButton.isEnabled = !publishing
+            binding.pickImageButton.isEnabled = !publishing
+        }
+
         viewModel.publishErrorLive.observe(viewLifecycleOwner) { err ->
             if (!err.isNullOrBlank()) {
                 Toast.makeText(requireContext(), err, Toast.LENGTH_LONG).show()

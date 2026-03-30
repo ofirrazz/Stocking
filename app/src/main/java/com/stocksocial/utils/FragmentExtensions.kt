@@ -8,10 +8,4 @@ val Fragment.appContainer: AppContainer
     get() = (requireActivity().application as StockSocialApp).appContainer
 
 val Fragment.appViewModelFactory: AppViewModelFactory
-    get() = AppViewModelFactory(
-        authRepository = appContainer.authRepository,
-        feedRepository = appContainer.feedRepository,
-        profileRepository = appContainer.profileRepository,
-        articlesRepository = appContainer.articlesRepository,
-        watchlistRepository = appContainer.watchlistRepository
-    )
+    get() = appContainer.viewModelFactory

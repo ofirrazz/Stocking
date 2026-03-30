@@ -4,8 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.stocksocial.databinding.FragmentFeedBinding
 import com.stocksocial.ui.adapters.FeedAdapter
@@ -15,7 +17,11 @@ import com.stocksocial.viewmodel.FeedViewModel
 class FeedFragment : Fragment() {
 
     private val viewModel: FeedViewModel by viewModels { appViewModelFactory }
-    private val feedAdapter = FeedAdapter()
+    private val feedAdapter = FeedAdapter { post ->
+        val direction = FeedFragmentDirections.actionFeedFragmentToPostDetailsFragment(post.id)
+        findNavController().navigate(direction)
+    }
+    private var lastShownError: String? = null
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 
@@ -37,6 +43,11 @@ class FeedFragment : Fragment() {
         viewModel.feedStateLive.observe(viewLifecycleOwner) { state ->
             binding.loadingProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             state.data?.let { posts -> feedAdapter.submitList(posts) }
+            val error = state.errorMessage
+            if (!error.isNullOrBlank() && error != lastShownError) {
+                lastShownError = error
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+            }
         }
 
         viewModel.loadFeed()

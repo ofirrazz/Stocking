@@ -26,3 +26,17 @@ local.properties
 
 # Captures
 captures/
+
+# Sensitive files / secrets
+.env
+.env.*
+*.jks
+*.keystore
+secrets.properties
+app/google-services.json
+
+# Explicit required ignores
+/build
+/app/build
+.gradle
+.idea/
