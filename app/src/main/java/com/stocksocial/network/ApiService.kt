@@ -15,6 +15,12 @@ interface ApiService {
         @Query("token") token: String = BuildConfig.FINNHUB_TOKEN
     ): Response<List<FinnhubNewsItemDto>>
 
+    @GET("search")
+    suspend fun searchSymbols(
+        @Query("q") query: String,
+        @Query("token") token: String = BuildConfig.FINNHUB_TOKEN
+    ): Response<FinnhubSymbolSearchResponse>
+
     @GET("quote")
     suspend fun getQuote(
         @Query("symbol") symbol: String,

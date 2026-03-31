@@ -7,40 +7,51 @@
     android:paddingTop="6dp">
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/stock_symbol">
+        android:hint="@string/stock_symbol"
+        app:boxStrokeColor="@color/primary_gold"
+        app:hintTextColor="@color/text_muted">
 
-        <com.google.android.material.textfield.TextInputEditText
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/symbolInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textCapCharacters" />
+            android:completionThreshold="1"
+            android:inputType="textCapCharacters"
+            android:minHeight="48dp" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:hint="@string/shares">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/sharesInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal" />
-    </com.google.android.material.textfield.TextInputLayout>
+        android:layout_marginTop="4dp"
+        android:text="@string/portfolio_symbol_search_hint"
+        android:textColor="@color/text_muted"
+        android:textSize="12sp" />
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:hint="@string/buy_price">
+        android:layout_marginTop="14dp"
+        android:hint="@string/buy_price"
+        app:boxStrokeColor="@color/primary_gold"
+        app:hintTextColor="@color/text_muted">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/buyPriceInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal|numberSigned" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/portfolio_one_unit_hint"
+        android:textColor="@color/text_muted"
+        android:textSize="12sp" />
 </LinearLayout>

@@ -33,7 +33,7 @@ class PortfolioHoldingsAdapter(
         val item = items[position]
         val ctx = holder.binding.root.context
         holder.binding.symbolText.text = item.symbol
-        holder.binding.companyNameText.text = companyLabel(item.symbol)
+        holder.binding.companyNameText.text = companyLabel(item)
         holder.binding.positionValueText.text = currency.format(item.currentValue)
         holder.binding.sharesSubtitleText.text = formatShares(ctx, item.shares)
         holder.binding.avgStatText.text =
@@ -89,7 +89,10 @@ class PortfolioHoldingsAdapter(
             "JPM" to "JPMorgan Chase & Co."
         )
 
-        fun companyLabel(symbol: String): String =
-            knownNames[symbol.uppercase(Locale.US)] ?: symbol.uppercase(Locale.US)
+        fun companyLabel(item: PortfolioHolding): String {
+            item.displayName?.takeIf { it.isNotBlank() }?.let { return it }
+            val sym = item.symbol.uppercase(Locale.US)
+            return knownNames[sym] ?: sym
+        }
     }
 }
