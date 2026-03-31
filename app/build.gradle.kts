@@ -13,12 +13,22 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 val finnhubToken: String = localProperties.getProperty("FINNHUB_TOKEN") ?: ""
-val hasGoogleServicesJson = rootProject.file("app/google-services.json").exists()
+val googleServicesJson = file("google-services.json")
+val googleServicesJsonText = if (googleServicesJson.exists()) googleServicesJson.readText() else ""
+val hasGoogleServicesJson =
+    googleServicesJson.exists() &&
+        googleServicesJson.length() > 0L &&
+        googleServicesJsonText.contains("\"project_info\"") &&
+        googleServicesJsonText.contains("\"client\"")
 
 if (hasGoogleServicesJson) {
     apply(plugin = "com.google.gms.google-services")
 } else {
-    logger.warn("google-services.json was not found; Firebase services setup is disabled for this build.")
+    logger.warn(
+        "google-services.json is missing or invalid at ${googleServicesJson.path}. " +
+            "Building without Google Services plugin; Firebase-backed flows will be disabled. " +
+            "Download a fresh file from Firebase Console and place it under app/google-services.json."
+    )
 }
 
 android {
@@ -77,6 +87,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.fragment:fragment-ktx:1.8.2")
+    implementation("androidx.activity:activity-ktx:1.9.2")
 
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.7")

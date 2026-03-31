@@ -44,11 +44,12 @@ fun CachedPostEntity.toPost(): Post = Post(
     content = content,
     createdAt = createdAt,
     likesCount = likesCount,
+    likedByCurrentUser = likedByCurrentUser,
     commentsCount = commentsCount,
     stockSymbol = stockSymbol,
     stockPrice = stockPrice,
     imageUrl = imageUrl,
-    videoUrl = null,
+    videoUrl = videoUrl,
     localImagePath = localImagePath
 )
 
@@ -66,10 +67,12 @@ fun Post.toEntity(localImagePathOverride: String? = null): CachedPostEntity {
         createdAt = createdAt,
         createdAtMillis = millis,
         likesCount = likesCount,
+        likedByCurrentUser = likedByCurrentUser,
         commentsCount = commentsCount,
         stockSymbol = stockSymbol,
         stockPrice = stockPrice,
         imageUrl = imageUrl,
+        videoUrl = videoUrl,
         localImagePath = localImagePathOverride ?: localImagePath
     )
 }

@@ -246,7 +246,7 @@
                                     android:textColor="@color/primary_gold"
                                     android:textSize="12sp"
                                     android:textStyle="bold"
-                                    tools:text="טוב מאוד" />
+                                    tools:text="Excellent" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
@@ -366,7 +366,7 @@
                             android:layout_marginHorizontal="8dp"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
-                            tools:text="צמיחה" />
+                            tools:text="Growth" />
 
                         <ProgressBar
                             android:id="@+id/scoreBar1"
@@ -411,7 +411,7 @@
                             android:layout_marginHorizontal="8dp"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
-                            tools:text="ערך" />
+                            tools:text="Value" />
 
                         <ProgressBar
                             android:id="@+id/scoreBar2"
@@ -456,7 +456,7 @@
                             android:layout_marginHorizontal="8dp"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
-                            tools:text="מומנטום" />
+                            tools:text="Momentum" />
 
                         <ProgressBar
                             android:id="@+id/scoreBar3"
@@ -501,7 +501,7 @@
                             android:layout_marginHorizontal="8dp"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
-                            tools:text="איכות" />
+                            tools:text="Quality" />
 
                         <ProgressBar
                             android:id="@+id/scoreBar4"

@@ -1,68 +1,66 @@
 package com.stocksocial.ui.feed
 
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.auth.FirebaseAuth
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentFeedBinding
-import com.stocksocial.model.FeedHotStockCategory
+import com.stocksocial.model.Post
 import com.stocksocial.model.SearchSuggestion
 import com.stocksocial.model.SearchSuggestionType
+import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.repository.RepositoryResult
 import com.stocksocial.ui.adapters.FeedAdapter
-import com.stocksocial.ui.adapters.FeedHotStocksAdapter
+import com.stocksocial.ui.post.CommentsBottomSheet
 import com.stocksocial.ui.adapters.UnifiedSearchAdapter
 import com.stocksocial.utils.appContainer
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.FeedViewModel
 import com.stocksocial.viewmodel.ProfileViewModel
-import com.stocksocial.viewmodel.StocksViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class FeedFragment : Fragment() {
 
     private val viewModel: FeedViewModel by viewModels { appViewModelFactory }
-    private val stocksViewModel: StocksViewModel by viewModels { appViewModelFactory }
     private val profileViewModel: ProfileViewModel by viewModels { appViewModelFactory }
     private val feedAdapter = FeedAdapter(
         onPostClick = { post ->
             val direction = FeedFragmentDirections.actionFeedFragmentToPostDetailsFragment(post.id)
             findNavController().navigate(direction)
         },
-        onShareClick = { post -> sharePost(post) },
+        onLikeClick = { post -> profileViewModel.likePost(post.id) },
+        onCommentClick = { post -> openCommentsSheet(post.id) },
+        onEditClick = { post ->
+            val direction = FeedFragmentDirections.actionFeedFragmentToPostDetailsFragment(post.id)
+            findNavController().navigate(direction)
+        },
+        onShareClick = { post -> showSharePostDialog(post) },
         onStockClick = { symbol ->
             val direction = FeedFragmentDirections.actionFeedFragmentToStockDetailsFragment(symbol)
             findNavController().navigate(direction)
         }
     )
-    private val hotStocksAdapter = FeedHotStocksAdapter { symbol ->
-        findNavController().navigate(FeedFragmentDirections.actionFeedFragmentToStockDetailsFragment(symbol))
-    }
     private var lastShownError: String? = null
     private var searchJob: Job? = null
-    private var marketRefreshJob: Job? = null
-    private var feedHotChipId: Int = R.id.chipAll
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 
@@ -78,65 +76,24 @@ class FeedFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.hotStocksRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.hotStocksRecyclerView.adapter = hotStocksAdapter
-
         binding.feedRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.feedRecyclerView.adapter = feedAdapter
+
+        setFragmentResultListener(CommentsBottomSheet.REQUEST_KEY) { _, bundle ->
+            if (bundle.getBoolean(CommentsBottomSheet.EXTRA_UPDATED)) {
+                viewModel.loadFeed()
+            }
+        }
 
         binding.searchPeopleButton.setOnClickListener { showSearchPeopleDialog() }
         binding.createPostButton.setOnClickListener {
             findNavController().navigate(FeedFragmentDirections.actionFeedFragmentToCreatePostFragment())
         }
 
-        val chips = listOf(binding.chipAll, binding.chipTech, binding.chipBanking, binding.chipCrypto)
-        fun applyChipStyle(selected: Chip) {
-            chips.forEach { chip ->
-                val on = chip.id == selected.id
-                if (on) {
-                    chip.setChipBackgroundColorResource(R.color.primary_gold)
-                    chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
-                    chip.chipStrokeWidth = 0f
-                } else {
-                    chip.setChipBackgroundColorResource(R.color.chip_bg)
-                    chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
-                    chip.chipStrokeWidth = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        1f,
-                        resources.displayMetrics
-                    )
-                    chip.setChipStrokeColorResource(R.color.border)
-                }
-            }
-        }
-        binding.feedChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
-            val id = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
-            val chip = binding.root.findViewById<Chip>(id)
-            applyChipStyle(chip)
-            feedHotChipId = id
-            when (id) {
-                R.id.chipAll -> {
-                    stocksViewModel.stocksStateLive.value?.data?.trendingStocks?.let {
-                        hotStocksAdapter.submitOrdered(it)
-                    }
-                }
-                R.id.chipTech -> loadFeedHotCategory(FeedHotStockCategory.technology)
-                R.id.chipBanking -> loadFeedHotCategory(FeedHotStockCategory.banking)
-                R.id.chipCrypto -> loadFeedHotCategory(FeedHotStockCategory.crypto)
-            }
-        }
-        applyChipStyle(binding.chipAll)
-
-        stocksViewModel.stocksStateLive.observe(viewLifecycleOwner) { state ->
-            if (feedHotChipId == R.id.chipAll) {
-                state.data?.trendingStocks?.let { hotStocksAdapter.submitOrdered(it) }
-            }
-        }
-        stocksViewModel.loadStocks()
-
         viewModel.feedStateLive.observe(viewLifecycleOwner) { state ->
             binding.loadingProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             state.data?.let { posts ->
+                feedAdapter.currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                 feedAdapter.submitList(posts)
                 binding.feedSectionSubtitle.text =
                     getString(R.string.feed_new_posts_count, posts.size)
@@ -177,37 +134,33 @@ class FeedFragment : Fragment() {
             }
         }
 
+        profileViewModel.likePostStateLive.observe(viewLifecycleOwner) { state ->
+            if (!state.errorMessage.isNullOrBlank()) {
+                val msg = if (state.errorMessage == ProfileRepository.MESSAGE_ALREADY_LIKED) {
+                    getString(R.string.already_liked_post)
+                } else {
+                    state.errorMessage
+                }
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeLikePostState()
+            } else if (state.data != null) {
+                Toast.makeText(requireContext(), R.string.post_liked, Toast.LENGTH_SHORT).show()
+                profileViewModel.consumeLikePostState()
+                viewModel.loadFeed()
+            }
+        }
+
         viewModel.loadFeed()
     }
 
     override fun onStart() {
         super.onStart()
         viewModel.startLiveQuotePolling()
-        marketRefreshJob = viewLifecycleOwner.lifecycleScope.launch {
-            while (isActive) {
-                delay(45_000)
-                stocksViewModel.refreshMarketSnapshot()
-            }
-        }
-        stocksViewModel.refreshMarketSnapshot()
     }
 
     override fun onStop() {
         viewModel.stopLiveQuotePolling()
-        marketRefreshJob?.cancel()
-        marketRefreshJob = null
         super.onStop()
-    }
-
-    private fun loadFeedHotCategory(symbolsInOrder: List<String>) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            when (val r = appContainer.watchlistRepository.getStocksForSymbols(symbolsInOrder)) {
-                is RepositoryResult.Success ->
-                    hotStocksAdapter.submitInDisplayOrder(r.data, symbolsInOrder)
-                is RepositoryResult.Error ->
-                    Toast.makeText(requireContext(), r.message, Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     private fun showSearchPeopleDialog() {
@@ -308,21 +261,46 @@ class FeedFragment : Fragment() {
         dialog.show()
     }
 
-    private fun sharePost(post: com.stocksocial.model.Post) {
-        val postText = buildString {
-            append("Shared from @${post.author.username}:\n")
-            append(post.content)
-            if (!post.stockSymbol.isNullOrBlank()) {
-                append("\n\nTicker: ${post.stockSymbol}")
-            }
-            if (!post.imageUrl.isNullOrBlank()) {
-                append("\nImage: ${post.imageUrl}")
-            }
-            if (!post.videoUrl.isNullOrBlank()) {
-                append("\nVideo: ${post.videoUrl}")
-            }
+    private fun showSharePostDialog(post: Post) {
+        val dialog = android.app.Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_share_post, null)
+        dialog.setContentView(dialogView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+        val captionInput = dialogView.findViewById<TextInputEditText>(R.id.sharePostCaptionInput)
+        dialogView.findViewById<View>(R.id.sharePostCancelButton).setOnClickListener { dialog.dismiss() }
+        dialogView.findViewById<View>(R.id.sharePostPublishButton).setOnClickListener {
+            val userMsg = captionInput.text?.toString()?.trim().orEmpty()
+            val body = buildShareQuotedBody(post)
+            val finalText = if (userMsg.isNotEmpty()) "$userMsg\n\n$body" else body
+            viewModel.publishPost(finalText, null)
+            dialog.dismiss()
         }
-        viewModel.publishPost(postText, null)
+        dialog.setOnShowListener {
+            val width = (resources.displayMetrics.widthPixels * 0.94f).toInt()
+            dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+            captionInput.focusAndShowKeyboard()
+        }
+        dialog.show()
+    }
+
+    private fun openCommentsSheet(postId: String) {
+        CommentsBottomSheet.newInstance(postId).show(childFragmentManager, "comments")
+    }
+
+    private fun buildShareQuotedBody(post: Post): String = buildString {
+        append("Shared from @${post.author.username}:\n")
+        append(post.content)
+        if (!post.stockSymbol.isNullOrBlank()) {
+            append("\n\nTicker: ${post.stockSymbol}")
+        }
+        if (!post.imageUrl.isNullOrBlank()) {
+            append("\nImage: ${post.imageUrl}")
+        }
+        if (!post.videoUrl.isNullOrBlank()) {
+            append("\nVideo: ${post.videoUrl}")
+        }
     }
 
     override fun onResume() {

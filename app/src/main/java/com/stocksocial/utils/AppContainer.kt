@@ -1,6 +1,8 @@
 package com.stocksocial.utils
 
 import android.content.Context
+import com.stocksocial.data.prefs.RecentHotSearchStore
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -20,11 +22,22 @@ class AppContainer(context: Context) {
     private val appContext = context.applicationContext
     private val database = AppDatabase.getInstance(appContext)
     private val apiService = RetrofitInstance.createApiService()
+    private val isFirebaseConfigured = FirebaseApp.getApps(appContext).isNotEmpty()
+
+    private val firebaseAuth: FirebaseAuth? by lazy {
+        if (isFirebaseConfigured) FirebaseAuth.getInstance() else null
+    }
+    private val firebaseFirestore: FirebaseFirestore? by lazy {
+        if (isFirebaseConfigured) FirebaseFirestore.getInstance() else null
+    }
+    private val firebaseStorage: FirebaseStorage? by lazy {
+        if (isFirebaseConfigured) FirebaseStorage.getInstance() else null
+    }
 
     val authRepository: AuthRepository by lazy {
         AuthRepository(
-            auth = FirebaseAuth.getInstance(),
-            firestore = FirebaseFirestore.getInstance()
+            auth = firebaseAuth,
+            firestore = firebaseFirestore
         )
     }
 
@@ -38,9 +51,9 @@ class AppContainer(context: Context) {
 
     val feedRepository: FeedRepository by lazy {
         FeedRepository(
-            firestore = FirebaseFirestore.getInstance(),
-            storage = FirebaseStorage.getInstance(),
-            auth = FirebaseAuth.getInstance(),
+            firestore = firebaseFirestore,
+            storage = firebaseStorage,
+            auth = firebaseAuth,
             postDao = database.postDao(),
             appContext = appContext,
             watchlistRepository = watchlistRepository
@@ -49,10 +62,10 @@ class AppContainer(context: Context) {
 
     val profileRepository: ProfileRepository by lazy {
         ProfileRepository(
-            firestore = FirebaseFirestore.getInstance(),
-            auth = FirebaseAuth.getInstance(),
+            firestore = firebaseFirestore,
+            auth = firebaseAuth,
             postDao = database.postDao(),
-            storage = FirebaseStorage.getInstance()
+            storage = firebaseStorage
         )
     }
 
@@ -60,7 +73,8 @@ class AppContainer(context: Context) {
     val stockDetailsRepository: StockDetailsRepository by lazy {
         StockDetailsRepository(
             apiService = apiService,
-            firestore = FirebaseFirestore.getInstance()
+            firestore = firebaseFirestore ?: FirebaseFirestore.getInstance(),
+            auth = firebaseAuth
         )
     }
     val portfolioRepository: PortfolioRepository by lazy {
@@ -68,6 +82,12 @@ class AppContainer(context: Context) {
             firestore = FirebaseFirestore.getInstance(),
             auth = FirebaseAuth.getInstance(),
             watchlistRepository = watchlistRepository
+        )
+    }
+
+    val recentHotSearchStore: RecentHotSearchStore by lazy {
+        RecentHotSearchStore(
+            appContext.getSharedPreferences("hot_stocks_prefs", Context.MODE_PRIVATE)
         )
     }
 
@@ -79,7 +99,8 @@ class AppContainer(context: Context) {
             articlesRepository = articlesRepository,
             watchlistRepository = watchlistRepository,
             stockDetailsRepository = stockDetailsRepository,
-            portfolioRepository = portfolioRepository
+            portfolioRepository = portfolioRepository,
+            recentHotSearchStore = recentHotSearchStore
         )
     }
 }

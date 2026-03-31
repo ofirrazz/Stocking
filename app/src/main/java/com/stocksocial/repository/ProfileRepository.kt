@@ -21,23 +21,28 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ProfileRepository(
-    private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore?,
+    private val auth: FirebaseAuth?,
     private val postDao: PostDao,
-    private val storage: FirebaseStorage
+    private val storage: FirebaseStorage?
 ) {
 
     suspend fun searchUsersByPrefix(query: String): RepositoryResult<List<UserSuggestion>> =
         withContext(Dispatchers.IO) {
-            val currentUid = auth.currentUser?.uid
+            val firebaseAuth = auth
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+            val firebaseFirestore = firestore
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+            val currentUid = firebaseAuth.currentUser?.uid
                 ?: return@withContext RepositoryResult.Error("Not signed in")
             val q = query.trim().lowercase()
             if (q.length < 2) return@withContext RepositoryResult.Success(emptyList())
             try {
                 val snapshot = try {
-                    firestore.collection("users")
+                    firebaseFirestore.collection("users")
                         .orderBy("usernameLower")
                         .startAt(q)
                         .endAt(q + "\uf8ff")
@@ -45,7 +50,7 @@ class ProfileRepository(
                         .get()
                         .await()
                 } catch (_: Exception) {
-                    firestore.collection("users")
+                    firebaseFirestore.collection("users")
                         .orderBy("username")
                         .startAt(q)
                         .endAt(q + "\uf8ff")
@@ -71,15 +76,19 @@ class ProfileRepository(
         }
 
     suspend fun getProfile(): RepositoryResult<User> = withContext(Dispatchers.IO) {
-        val u = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val u = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
         try {
-            val userRef = firestore.collection("users").document(u.uid)
+            val userRef = firebaseFirestore.collection("users").document(u.uid)
             val loads = coroutineScope {
                 val docD = async { userRef.get().await() }
                 val folD = async { userRef.collection("followers").get().await() }
                 val ingD = async { userRef.collection("following").get().await() }
                 val postsD = async {
-                    firestore.collection("posts")
+                    firebaseFirestore.collection("posts")
                         .whereEqualTo("authorId", u.uid)
                         .limit(500)
                         .get()
@@ -130,9 +139,13 @@ class ProfileRepository(
     )
 
     suspend fun getMyPosts(): RepositoryResult<List<Post>> = withContext(Dispatchers.IO) {
-        val u = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val u = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
         try {
-            val snap = firestore.collection("posts")
+            val snap = firebaseFirestore.collection("posts")
                 .whereEqualTo("authorId", u.uid)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(50)
@@ -140,7 +153,7 @@ class ProfileRepository(
                 .await()
             val entities = snap.documents.mapNotNull { doc ->
                 val existing = postDao.getById(doc.id)
-                doc.toCachedPostEntity(existing?.localImagePath)
+                doc.toCachedPostEntity(existing?.localImagePath, u.uid)
             }
             postDao.upsertAll(entities)
             val posts = entities.map { it.toPost() }
@@ -161,11 +174,17 @@ class ProfileRepository(
         newName: String?,
         newImageUri: Uri?
     ): RepositoryResult<User> = withContext(Dispatchers.IO) {
-        val current = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseStorage = storage
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val current = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
         try {
             var photoUrl: String? = null
             if (newImageUri != null) {
-                val ref = storage.reference.child("profile_images/${current.uid}/${UUID.randomUUID()}.jpg")
+                val ref = firebaseStorage.reference.child("profile_images/${current.uid}/${UUID.randomUUID()}.jpg")
                 ref.putFile(newImageUri).await()
                 photoUrl = ref.downloadUrl.await().toString()
             }
@@ -179,7 +198,7 @@ class ProfileRepository(
             }
             if (!photoUrl.isNullOrBlank()) updates["photoUrl"] = photoUrl
             if (updates.isNotEmpty()) {
-                firestore.collection("users").document(current.uid).set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
+                firebaseFirestore.collection("users").document(current.uid).set(updates, com.google.firebase.firestore.SetOptions.merge()).await()
             }
 
             if (name.isNotBlank() || !photoUrl.isNullOrBlank()) {
@@ -196,13 +215,17 @@ class ProfileRepository(
     }
 
     suspend fun followUserByUsername(username: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
-        val current = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val current = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
         val normalized = username.trim()
         if (normalized.isBlank()) {
             return@withContext RepositoryResult.Error("Enter a username")
         }
         try {
-            val targetSnapshot = firestore.collection("users")
+            val targetSnapshot = firebaseFirestore.collection("users")
                 .whereEqualTo("username", normalized)
                 .limit(1)
                 .get()
@@ -215,7 +238,7 @@ class ProfileRepository(
             }
 
             val now = System.currentTimeMillis()
-            firestore.collection("users")
+            firebaseFirestore.collection("users")
                 .document(current.uid)
                 .collection("following")
                 .document(targetId)
@@ -228,7 +251,7 @@ class ProfileRepository(
                 )
                 .await()
 
-            firestore.collection("users")
+            firebaseFirestore.collection("users")
                 .document(targetId)
                 .collection("followers")
                 .document(current.uid)
@@ -248,21 +271,52 @@ class ProfileRepository(
     }
 
     suspend fun likePost(postId: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
-        val current = auth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val current = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val postRef = firebaseFirestore.collection("posts").document(postId)
+        val alreadyLiked = AtomicBoolean(false)
         try {
-            firestore.collection("posts")
-                .document(postId)
-                .update(
+            firebaseFirestore.runTransaction { transaction ->
+                val snap = transaction.get(postRef)
+                if (!snap.exists()) {
+                    throw com.google.firebase.firestore.FirebaseFirestoreException(
+                        "Post not found",
+                        com.google.firebase.firestore.FirebaseFirestoreException.Code.NOT_FOUND
+                    )
+                }
+                val raw = snap.get("likedUserIds")
+                val liked = when (raw) {
+                    is List<*> -> raw.filterIsInstance<String>().toSet()
+                    else -> emptySet()
+                }
+                if (current.uid in liked) {
+                    alreadyLiked.set(true)
+                    return@runTransaction
+                }
+                transaction.update(
+                    postRef,
                     mapOf(
-                        "likesCount" to FieldValue.increment(1),
-                        "lastLikedBy" to current.uid
+                        "likedUserIds" to FieldValue.arrayUnion(current.uid),
+                        "likesCount" to FieldValue.increment(1)
                     )
                 )
-                .await()
+            }.await()
+
+            if (alreadyLiked.get()) {
+                return@withContext RepositoryResult.Error(MESSAGE_ALREADY_LIKED)
+            }
 
             val local = postDao.getById(postId)
             if (local != null) {
-                postDao.upsert(local.copy(likesCount = local.likesCount + 1))
+                postDao.upsert(
+                    local.copy(
+                        likesCount = local.likesCount + 1,
+                        likedByCurrentUser = true
+                    )
+                )
             }
             RepositoryResult.Success(Unit)
         } catch (e: Exception) {
@@ -272,16 +326,18 @@ class ProfileRepository(
 
     suspend fun getPublicProfileByUsername(username: String): RepositoryResult<PublicUserProfile> =
         withContext(Dispatchers.IO) {
+            val firebaseFirestore = firestore
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
             val normalized = username.trim()
             if (normalized.isBlank()) return@withContext RepositoryResult.Error("Invalid username")
             try {
-                var snap = firestore.collection("users")
+                var snap = firebaseFirestore.collection("users")
                     .whereEqualTo("usernameLower", normalized.lowercase())
                     .limit(1)
                     .get()
                     .await()
                 if (snap.isEmpty) {
-                    snap = firestore.collection("users")
+                    snap = firebaseFirestore.collection("users")
                         .whereEqualTo("username", normalized)
                         .limit(1)
                         .get()
@@ -294,13 +350,13 @@ class ProfileRepository(
                 val displayName = doc.getString("displayName")?.takeIf { it.isNotBlank() } ?: uname
                 val stats = coroutineScope {
                     val followersD = async {
-                        firestore.collection("users").document(uid).collection("followers").get().await()
+                        firebaseFirestore.collection("users").document(uid).collection("followers").get().await()
                     }
                     val followingD = async {
-                        firestore.collection("users").document(uid).collection("following").get().await()
+                        firebaseFirestore.collection("users").document(uid).collection("following").get().await()
                     }
                     val postsD = async {
-                        firestore.collection("posts")
+                        firebaseFirestore.collection("posts")
                             .whereEqualTo("authorId", uid)
                             .limit(500)
                             .get()
@@ -335,27 +391,49 @@ class ProfileRepository(
         }
 
     suspend fun getPostsByUserId(userId: String): RepositoryResult<List<Post>> = withContext(Dispatchers.IO) {
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
         if (userId.isBlank()) return@withContext RepositoryResult.Error("Invalid user")
         try {
-            val snap = firestore.collection("posts")
+            val snap = firebaseFirestore.collection("posts")
                 .whereEqualTo("authorId", userId)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(50)
                 .get()
                 .await()
-            val posts = snap.documents.mapNotNull { it.toPost() }
+            val viewerUid = auth?.currentUser?.uid
+            val posts = snap.documents.mapNotNull { it.toPost(currentUserId = viewerUid) }
             RepositoryResult.Success(posts)
         } catch (e: Exception) {
             RepositoryResult.Error(e.message ?: "Failed to load posts", e)
         }
     }
 
+    suspend fun getFavoriteSymbolList(): RepositoryResult<List<String>> = withContext(Dispatchers.IO) {
+        val firebaseAuth = auth ?: return@withContext RepositoryResult.Success(emptyList())
+        val firebaseFirestore = firestore ?: return@withContext RepositoryResult.Success(emptyList())
+        val uid = firebaseAuth.currentUser?.uid ?: return@withContext RepositoryResult.Success(emptyList())
+        try {
+            val snap = firebaseFirestore.collection("users")
+                .document(uid)
+                .collection("favoriteSymbols")
+                .get()
+                .await()
+            val ids = snap.documents.map { it.id.uppercase() }.sorted()
+            RepositoryResult.Success(ids)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to load favorites", e)
+        }
+    }
+
     suspend fun isSymbolFavorite(symbol: String): Boolean = withContext(Dispatchers.IO) {
-        val uid = auth.currentUser?.uid ?: return@withContext false
+        val firebaseAuth = auth ?: return@withContext false
+        val firebaseFirestore = firestore ?: return@withContext false
+        val uid = firebaseAuth.currentUser?.uid ?: return@withContext false
         val sym = symbol.trim().uppercase()
         if (sym.isBlank()) return@withContext false
         try {
-            firestore.collection("users")
+            firebaseFirestore.collection("users")
                 .document(uid)
                 .collection("favoriteSymbols")
                 .document(sym)
@@ -369,11 +447,15 @@ class ProfileRepository(
 
     suspend fun setSymbolFavorite(symbol: String, favorite: Boolean): RepositoryResult<Unit> =
         withContext(Dispatchers.IO) {
-            val uid = auth.currentUser?.uid ?: return@withContext RepositoryResult.Error("Not signed in")
+            val firebaseAuth = auth
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+            val firebaseFirestore = firestore
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+            val uid = firebaseAuth.currentUser?.uid ?: return@withContext RepositoryResult.Error("Not signed in")
             val sym = symbol.trim().uppercase()
             if (sym.isBlank()) return@withContext RepositoryResult.Error("Invalid symbol")
             try {
-                val ref = firestore.collection("users")
+                val ref = firebaseFirestore.collection("users")
                     .document(uid)
                     .collection("favoriteSymbols")
                     .document(sym)
@@ -392,4 +474,11 @@ class ProfileRepository(
                 RepositoryResult.Error(e.message ?: "Failed to update favorite", e)
             }
         }
+
+    companion object {
+        const val MESSAGE_ALREADY_LIKED = "ALREADY_LIKED"
+
+        private const val FIREBASE_NOT_CONFIGURED_MESSAGE =
+            "Firebase is not configured on this build. Add app/google-services.json to enable profile actions."
+    }
 }

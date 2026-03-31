@@ -12,9 +12,11 @@ data class CachedPostEntity(
     val createdAt: String,
     val createdAtMillis: Long,
     val likesCount: Int,
+    val likedByCurrentUser: Boolean,
     val commentsCount: Int,
     val stockSymbol: String?,
     val stockPrice: Double?,
     val imageUrl: String?,
+    val videoUrl: String?,
     val localImagePath: String?
 )
