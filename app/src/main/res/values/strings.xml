@@ -133,6 +133,9 @@
     <string name="buy_price">Buy Price</string>
     <string name="save_holding">Save Holding</string>
     <string name="holding_saved">Holding saved</string>
+    <string name="portfolio_symbol_search_hint">התחל להקליד סימבול או שם — נטענות הצעות מ-Finnhub</string>
+    <string name="portfolio_one_unit_hint">מחיר הקנייה הוא למניה אחת; התשואה מחושבת מול מחיר בשורה מה-API</string>
+    <string name="portfolio_invalid_buy_price">הזן מחיר קנייה חיובי</string>
     <string name="stock_details">Stock Details</string>
     <string name="analyst_recommendations">Analyst Recommendations</string>
     <string name="related_posts">Posts About This Stock</string>
@@ -193,4 +196,10 @@
     <string name="user_profile_watchlist_hint">רשימת מניות מומלצת מהמערכת (לא ספציפית למשתמש).</string>
     <string name="user_profile_not_found">משתמש לא נמצא</string>
     <string name="user_profile_joined_fmt">הצטרף ב־%1$s</string>
+
+    <!-- Web client ID (OAuth client type 3) from Firebase google-services.json after enabling Google Sign-In. -->
+    <string name="default_web_client_id" translatable="false">654488883410-flujfgljk4nc1mk5nvlii9qqmfkn3oi8.apps.googleusercontent.com</string>
+    <string name="google_signin_web_client_missing">הוסף את ה-Web client ID ל־default_web_client_id ב־strings (אחרי הפעלת Google ב-Firebase והורדת google-services.json מחדש).</string>
+    <string name="google_signin_no_token">לא התקבל אסימון מ-Google — בדוק ש-SHA-1 של האפליקציה מוגדר ב-Firebase.</string>
+    <string name="google_signin_failed">Google: %1$s</string>
 </resources>

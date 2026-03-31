@@ -4,7 +4,8 @@ data class PortfolioHolding(
     val symbol: String,
     val shares: Double,
     val buyPrice: Double,
-    val currentPrice: Double
+    val currentPrice: Double,
+    val displayName: String? = null
 ) {
     val investedValue: Double get() = shares * buyPrice
     val currentValue: Double get() = shares * currentPrice

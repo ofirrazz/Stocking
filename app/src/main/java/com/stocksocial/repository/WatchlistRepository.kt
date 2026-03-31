@@ -2,6 +2,7 @@ package com.stocksocial.repository
 
 import com.stocksocial.BuildConfig
 import com.stocksocial.model.Stock
+import com.stocksocial.model.SymbolSearchHit
 import com.stocksocial.network.currentDisplayPrice
 import com.stocksocial.model.WatchlistItem
 import com.stocksocial.network.ApiService
@@ -54,6 +55,68 @@ class WatchlistRepository(
             RepositoryResult.Success(fetchStocks(TRENDING_SYMBOLS))
         } catch (e: Exception) {
             RepositoryResult.Error(e.message ?: "Failed to load trending stocks", e)
+        }
+    }
+
+    suspend fun getStocksForSymbols(symbols: List<String>): RepositoryResult<List<Stock>> =
+        withContext(Dispatchers.IO) {
+            if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
+                return@withContext RepositoryResult.Error("Add FINNHUB_TOKEN in local.properties (see README).")
+            }
+            val normalized = symbols.map { it.trim().uppercase() }.filter { it.isNotEmpty() }
+            if (normalized.isEmpty()) {
+                return@withContext RepositoryResult.Success(emptyList())
+            }
+            try {
+                RepositoryResult.Success(fetchStocks(normalized))
+            } catch (e: Exception) {
+                RepositoryResult.Error(e.message ?: "Failed to load stocks", e)
+            }
+        }
+
+    suspend fun searchSymbols(query: String): RepositoryResult<List<SymbolSearchHit>> = withContext(Dispatchers.IO) {
+        if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
+            return@withContext RepositoryResult.Error("Add FINNHUB_TOKEN in local.properties (see README).")
+        }
+        val q = query.trim()
+        if (q.length < 1) {
+            return@withContext RepositoryResult.Success(emptyList())
+        }
+        try {
+            val response = apiService.searchSymbols(query = q)
+            val body = response.body()
+            if (!response.isSuccessful || body == null) {
+                return@withContext RepositoryResult.Success(emptyList())
+            }
+            val normQ = q.uppercase()
+            val seen = mutableSetOf<String>()
+            val filtered = body.result.orEmpty().mapNotNull { item ->
+                val rawSym = (item.displaySymbol ?: item.symbol)?.trim()?.uppercase().orEmpty()
+                if (rawSym.isEmpty() || rawSym in seen) return@mapNotNull null
+                val t = item.type?.lowercase().orEmpty()
+                val allowedType = t.isBlank() ||
+                    t.contains("common") ||
+                    t.contains("etf") ||
+                    t.contains("adr") ||
+                    t.contains("crypto")
+                if (!allowedType) return@mapNotNull null
+                seen.add(rawSym)
+                val desc = item.description?.trim()?.takeIf { it.isNotEmpty() } ?: rawSym
+                SymbolSearchHit(symbol = rawSym, description = desc)
+            }
+            val hits = filtered
+                .sortedWith(
+                    compareBy<SymbolSearchHit>(
+                        { if (it.symbol == normQ) 0 else 1 },
+                        { if (it.symbol.startsWith(normQ)) 0 else 1 },
+                        { if (it.description.uppercase().startsWith(normQ)) 0 else 1 },
+                        { it.symbol.length }
+                    )
+                )
+                .take(20)
+            RepositoryResult.Success(hits)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Search failed", e)
         }
     }
 
@@ -140,7 +203,19 @@ class WatchlistRepository(
             "MSFT" to "Microsoft",
             "AAPL" to "Apple",
             "TSLA" to "Tesla",
-            "GOOGL" to "Alphabet"
+            "GOOGL" to "Alphabet",
+            "META" to "Meta",
+            "JPM" to "JPMorgan Chase",
+            "BAC" to "Bank of America",
+            "WFC" to "Wells Fargo",
+            "GS" to "Goldman Sachs",
+            "C" to "Citigroup",
+            "MS" to "Morgan Stanley",
+            "BINANCE:BTCUSDT" to "Bitcoin",
+            "BINANCE:ETHUSDT" to "Ethereum",
+            "BINANCE:SOLUSDT" to "Solana",
+            "BINANCE:XRPUSDT" to "XRP",
+            "BINANCE:ADAUSDT" to "Cardano"
         )
     }
 }
