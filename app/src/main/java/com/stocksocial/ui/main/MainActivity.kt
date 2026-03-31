@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.stocksocial.R
 import com.stocksocial.databinding.ActivityMainBinding
@@ -40,7 +41,7 @@ class MainActivity : AppCompatActivity() {
             R.id.loginFragment,
             R.id.registerFragment
         )
-        if (FirebaseAuth.getInstance().currentUser != null) {
+        if (isFirebaseConfigured() && FirebaseAuth.getInstance().currentUser != null) {
             val dest = controller.currentDestination?.id
             if (dest != null && dest in authDestinations) {
                 controller.navigate(R.id.action_global_feedFragment)
@@ -53,10 +54,12 @@ class MainActivity : AppCompatActivity() {
             val showBottomNav = destination.id in setOf(
                 R.id.feedFragment,
                 R.id.portfolioFragment,
-                R.id.notificationsFragment,
+                R.id.hotStocksFragment,
                 R.id.profileFragment
             )
             binding.bottomNavigation.visibility = if (showBottomNav) View.VISIBLE else View.GONE
         }
     }
+
+    private fun isFirebaseConfigured(): Boolean = FirebaseApp.getApps(this).isNotEmpty()
 }

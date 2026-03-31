@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.stocksocial.model.Post
+import com.stocksocial.model.PostComment
 import com.stocksocial.repository.FeedRepository
 import com.stocksocial.repository.RepositoryResult
 import kotlinx.coroutines.Job
@@ -43,6 +44,14 @@ class FeedViewModel(
     private val _postActionState = MutableStateFlow(UiState<Unit>())
     val postActionState: StateFlow<UiState<Unit>> = _postActionState.asStateFlow()
     val postActionStateLive: LiveData<UiState<Unit>> = _postActionState.asLiveData()
+
+    private val _commentsState = MutableStateFlow(UiState<List<PostComment>>())
+    val commentsState: StateFlow<UiState<List<PostComment>>> = _commentsState.asStateFlow()
+    val commentsStateLive: LiveData<UiState<List<PostComment>>> = _commentsState.asLiveData()
+
+    private val _commentPostState = MutableStateFlow(UiState<Unit>())
+    val commentPostState: StateFlow<UiState<Unit>> = _commentPostState.asStateFlow()
+    val commentPostStateLive: LiveData<UiState<Unit>> = _commentPostState.asLiveData()
 
     private var quotePollJob: Job? = null
 
@@ -159,5 +168,43 @@ class FeedViewModel(
 
     fun consumePostActionState() {
         _postActionState.value = UiState()
+    }
+
+    fun loadComments(postId: String) {
+        viewModelScope.launch {
+            _commentsState.value = UiState(isLoading = true)
+            when (val result = feedRepository.getComments(postId)) {
+                is RepositoryResult.Success -> {
+                    _commentsState.value = UiState(data = result.data)
+                }
+                is RepositoryResult.Error -> {
+                    _commentsState.value = UiState(errorMessage = result.message)
+                }
+            }
+        }
+    }
+
+    fun postComment(postId: String, text: String) {
+        viewModelScope.launch {
+            _commentPostState.value = UiState(isLoading = true)
+            when (val result = feedRepository.addComment(postId, text)) {
+                is RepositoryResult.Success -> {
+                    _commentPostState.value = UiState(data = Unit)
+                    loadComments(postId)
+                    loadFeed()
+                }
+                is RepositoryResult.Error -> {
+                    _commentPostState.value = UiState(isLoading = false, errorMessage = result.message)
+                }
+            }
+        }
+    }
+
+    fun consumeCommentPostState() {
+        _commentPostState.value = UiState()
+    }
+
+    fun resetCommentsState() {
+        _commentsState.value = UiState()
     }
 }

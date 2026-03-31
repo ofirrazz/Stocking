@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="primary_gold">#FFC9B17A</color>
+    <!-- Muted brass / sand circle for profile edit FAB -->
+    <color name="edit_profile_fab">#FFC1A35F</color>
     <color name="accent_gold">#FFD4AF37</color>
     <color name="silver">#FFA8A9AD</color>
     <!-- Mockup: brighter gain/loss -->
