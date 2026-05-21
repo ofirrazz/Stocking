@@ -99,7 +99,7 @@
                             android:layout_height="72dp"
                             android:background="@drawable/bg_profile_circle"
                             android:padding="16dp"
-                            android:src="@android:drawable/ic_menu_myplaces"
+                            android:src="@drawable/ic_nav_profile"
                             app:tint="@color/text_primary" />
 
                         <LinearLayout
