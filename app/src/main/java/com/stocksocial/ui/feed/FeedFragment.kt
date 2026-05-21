@@ -57,6 +57,10 @@ class FeedFragment : Fragment() {
         onStockClick = { symbol ->
             val direction = FeedFragmentDirections.actionFeedFragmentToStockDetailsFragment(symbol)
             findNavController().navigate(direction)
+        },
+        onAuthorClick = { username ->
+            val direction = FeedFragmentDirections.actionFeedFragmentToUserProfileFragment(username)
+            findNavController().navigate(direction)
         }
     )
     private var lastShownError: String? = null
@@ -149,13 +153,12 @@ class FeedFragment : Fragment() {
                 viewModel.loadFeed()
             }
         }
-
-        viewModel.loadFeed()
     }
 
     override fun onStart() {
         super.onStart()
         viewModel.startLiveQuotePolling()
+        viewModel.loadFeed()
     }
 
     override fun onStop() {

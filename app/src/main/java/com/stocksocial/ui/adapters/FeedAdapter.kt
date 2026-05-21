@@ -15,7 +15,8 @@ class FeedAdapter(
     private val onCommentClick: (Post) -> Unit,
     private val onEditClick: (Post) -> Unit,
     private val onShareClick: (Post) -> Unit,
-    private val onStockClick: (String) -> Unit
+    private val onStockClick: (String) -> Unit,
+    private val onAuthorClick: (String) -> Unit
 ) : ListAdapter<Post, FeedAdapter.FeedViewHolder>(DiffCallback) {
 
     var currentUserId: String? = null
@@ -36,7 +37,8 @@ class FeedAdapter(
             onCommentClick = { onCommentClick(item) },
             onEditClick = { onEditClick(item) },
             onShareClick = { onShareClick(item) },
-            onStockClick = onStockClick
+            onStockClick = onStockClick,
+            onAuthorClick = { username -> onAuthorClick(username) }
         )
     }
 

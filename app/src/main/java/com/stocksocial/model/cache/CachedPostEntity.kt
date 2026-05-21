@@ -8,6 +8,7 @@ data class CachedPostEntity(
     @PrimaryKey val id: String,
     val authorId: String,
     val authorUsername: String,
+    val authorAvatarUrl: String?,
     val content: String,
     val createdAt: String,
     val createdAtMillis: Long,

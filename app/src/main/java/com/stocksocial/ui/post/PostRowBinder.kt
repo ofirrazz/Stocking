@@ -23,7 +23,8 @@ object PostRowBinder {
         onCommentClick: () -> Unit,
         onEditClick: () -> Unit,
         onShareClick: () -> Unit,
-        onStockClick: (String) -> Unit
+        onStockClick: (String) -> Unit,
+        onAuthorClick: ((String) -> Unit)? = null
     ) {
         val ctx = binding.root.context
         val name = item.author.username
@@ -97,5 +98,17 @@ object PostRowBinder {
         binding.commentAction.setOnClickListener { onCommentClick() }
         binding.editPostButton.setOnClickListener { onEditClick() }
         binding.shareAction.setOnClickListener { onShareClick() }
+
+        val authorClick = onAuthorClick
+        if (authorClick != null) {
+            val handler = View.OnClickListener { authorClick(item.author.username) }
+            binding.profileImage.setOnClickListener(handler)
+            binding.displayNameText.setOnClickListener(handler)
+            binding.handleText.setOnClickListener(handler)
+        } else {
+            binding.profileImage.setOnClickListener(null)
+            binding.displayNameText.setOnClickListener(null)
+            binding.handleText.setOnClickListener(null)
+        }
     }
 }

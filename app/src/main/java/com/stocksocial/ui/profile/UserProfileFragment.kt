@@ -73,6 +73,11 @@ class UserProfileFragment : Fragment() {
         binding.tabPortfolioButton.setOnClickListener { selectTab(1) }
         binding.tabWatchlistButton.setOnClickListener { selectTab(2) }
         binding.portfolioViewButton.setOnClickListener { selectTab(1) }
+        binding.followButton.setOnClickListener { viewModel.toggleFollow() }
+
+        viewModel.followStateLive.observe(viewLifecycleOwner) { state ->
+            bindFollowState(state)
+        }
 
         viewModel.profileStateLive.observe(viewLifecycleOwner) { state ->
             binding.loadingProgress.visibility =
@@ -168,6 +173,35 @@ class UserProfileFragment : Fragment() {
         } else {
             binding.websiteRow.visibility = View.GONE
             binding.websiteRow.setOnClickListener(null)
+        }
+    }
+
+    private fun bindFollowState(state: UserProfileViewModel.FollowUiState) {
+        if (state.isSelf) {
+            binding.followButton.visibility = View.GONE
+        } else {
+            binding.followButton.visibility = View.VISIBLE
+            binding.followButton.isEnabled = !state.isLoading
+            val ctx = requireContext()
+            if (state.isFollowing) {
+                binding.followButton.text = getString(R.string.following)
+                binding.followButton.setTextColor(ContextCompat.getColor(ctx, R.color.text_primary))
+                binding.followButton.backgroundTintList =
+                    android.content.res.ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.surface_card))
+                binding.followButton.strokeWidth = (resources.displayMetrics.density * 1).toInt()
+                binding.followButton.strokeColor =
+                    android.content.res.ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.border))
+            } else {
+                binding.followButton.text = getString(R.string.follow)
+                binding.followButton.setTextColor(ContextCompat.getColor(ctx, R.color.black))
+                binding.followButton.backgroundTintList =
+                    android.content.res.ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.primary_gold))
+                binding.followButton.strokeWidth = 0
+            }
+        }
+        state.errorMessage?.let { msg ->
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            viewModel.consumeFollowError()
         }
     }
 

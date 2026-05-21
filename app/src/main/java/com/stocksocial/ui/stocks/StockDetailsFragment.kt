@@ -25,6 +25,9 @@ import com.stocksocial.ui.adapters.StockUiFormatter
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.viewmodel.StockDetailsViewModel
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
@@ -60,9 +63,18 @@ class StockDetailsFragment : Fragment() {
         }
 
         binding.tabOverviewButton.setOnClickListener { selectTab(0) }
-        binding.tabInstitutionalButton.setOnClickListener { selectTab(1) }
-        binding.tabAnalystsButton.setOnClickListener { selectTab(2) }
+        binding.tabAnalystsButton.setOnClickListener { selectTab(1) }
         selectTab(0)
+
+        binding.metricPeHeader.setOnClickListener {
+            showMetricInfo(R.string.stock_metric_pe, R.string.stock_metric_pe_help)
+        }
+        binding.metricEpsHeader.setOnClickListener {
+            showMetricInfo(R.string.stock_metric_eps, R.string.stock_metric_eps_help)
+        }
+        binding.statVolumeHeader.setOnClickListener {
+            showMetricInfo(R.string.stock_stat_volume, R.string.stock_stat_volume_help)
+        }
 
         val sym = args.symbol.uppercase(Locale.US)
         binding.toolbarTickerText.text = "\$$sym"
@@ -191,11 +203,9 @@ class StockDetailsFragment : Fragment() {
 
     private fun selectTab(index: Int) {
         binding.sectionOverview.visibility = if (index == 0) View.VISIBLE else View.GONE
-        binding.sectionInstitutional.visibility = if (index == 1) View.VISIBLE else View.GONE
-        binding.sectionAnalysts.visibility = if (index == 2) View.VISIBLE else View.GONE
+        binding.sectionAnalysts.visibility = if (index == 1) View.VISIBLE else View.GONE
         styleTab(binding.tabOverviewButton, index == 0)
-        styleTab(binding.tabInstitutionalButton, index == 1)
-        styleTab(binding.tabAnalystsButton, index == 2)
+        styleTab(binding.tabAnalystsButton, index == 1)
     }
 
     private fun styleTab(btn: MaterialButton, selected: Boolean) {
@@ -229,13 +239,46 @@ class StockDetailsFragment : Fragment() {
         }
     }
 
+    private fun showMetricInfo(titleRes: Int, bodyRes: Int) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(titleRes)
+            .setMessage(bodyRes)
+            .setPositiveButton(R.string.stock_info_close, null)
+            .show()
+    }
+
     private fun formatRecommendations(latest: AnalystRecommendation?): String {
         if (latest == null) return getString(R.string.stock_no_recommendations)
+        val total = latest.strongBuy + latest.buy + latest.hold + latest.sell + latest.strongSell
+        val updatedLabel = humanReadablePeriod(latest.period)
         return buildString {
-            append("Period: ${latest.period}\n")
-            append("Strong Buy: ${latest.strongBuy} | Buy: ${latest.buy}\n")
-            append("Hold: ${latest.hold} | Sell: ${latest.sell} | Strong Sell: ${latest.strongSell}")
+            append(getString(R.string.stock_analyst_updated, updatedLabel))
+            append('\n')
+            append(getString(R.string.stock_analyst_total, total))
+            append("\n\n")
+            append("Strong Buy: ${latest.strongBuy}  •  Buy: ${latest.buy}\n")
+            append("Hold: ${latest.hold}  •  Sell: ${latest.sell}  •  Strong Sell: ${latest.strongSell}")
         }
+    }
+
+    private fun humanReadablePeriod(period: String): String {
+        if (period.isBlank()) return period
+        val cleaned = period.replace(Regex("\\s*\\(mock\\)\\s*$"), "")
+        val patterns = listOf("yyyy-MM-dd", "yyyy-MM")
+        for (pattern in patterns) {
+            try {
+                val parser = SimpleDateFormat(pattern, Locale.US)
+                parser.isLenient = false
+                val date = parser.parse(cleaned) ?: continue
+                val cal = Calendar.getInstance().apply { time = date }
+                if (cal.get(Calendar.DAY_OF_MONTH) == 1 || pattern == "yyyy-MM") {
+                    return SimpleDateFormat("LLLL yyyy", Locale.getDefault()).format(Date(cal.timeInMillis))
+                }
+                return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(cal.timeInMillis))
+            } catch (_: Exception) {
+            }
+        }
+        return cleaned
     }
 
     override fun onDestroyView() {
