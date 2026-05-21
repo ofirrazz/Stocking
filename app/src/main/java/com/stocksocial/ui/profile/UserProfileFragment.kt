@@ -75,6 +75,8 @@ class UserProfileFragment : Fragment() {
         binding.portfolioViewButton.setOnClickListener { selectTab(1) }
 
         viewModel.profileStateLive.observe(viewLifecycleOwner) { state ->
+            binding.loadingProgress.visibility =
+                if (state.isLoading && state.data == null) View.VISIBLE else View.GONE
             state.errorMessage?.let { msg ->
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
             }
@@ -131,7 +133,7 @@ class UserProfileFragment : Fragment() {
         if (!photo.isNullOrBlank()) {
             Glide.with(binding.avatarImage).load(photo).circleCrop().into(binding.avatarImage)
         } else {
-            binding.avatarImage.setImageResource(android.R.drawable.ic_menu_myplaces)
+            binding.avatarImage.setImageResource(R.drawable.ic_nav_profile)
         }
         val banner = p.bannerUrl
         if (!banner.isNullOrBlank()) {

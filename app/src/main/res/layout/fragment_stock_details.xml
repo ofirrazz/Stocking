@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:fillViewport="true"
-    android:layoutDirection="rtl">
+    android:background="@color/background">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:layoutDirection="rtl">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -97,7 +101,7 @@
                 android:textSize="13sp"
                 app:backgroundTint="@color/primary_gold"
                 app:cornerRadius="14dp"
-                app:icon="@android:drawable/ic_menu_sort_by_size"
+                app:icon="@drawable/ic_welcome_analytics"
                 app:iconGravity="textStart"
                 app:iconTint="@color/black"
                 app:iconSize="20dp"
@@ -115,7 +119,7 @@
                 android:textSize="12sp"
                 android:textColor="@color/text_muted"
                 app:cornerRadius="14dp"
-                app:icon="@android:drawable/ic_menu_agenda"
+                app:icon="@drawable/ic_list_lines"
                 app:iconGravity="textStart"
                 app:iconTint="@color/text_muted"
                 app:strokeColor="@color/border" />
@@ -131,7 +135,7 @@
                 android:textSize="12sp"
                 android:textColor="@color/text_muted"
                 app:cornerRadius="14dp"
-                app:icon="@android:drawable/ic_menu_compass"
+                app:icon="@drawable/ic_welcome_community"
                 app:iconGravity="textStart"
                 app:iconTint="@color/text_muted"
                 app:strokeColor="@color/border" />
@@ -356,7 +360,7 @@
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:contentDescription="@null"
-                            android:src="@android:drawable/stat_sys_upload"
+                            android:src="@drawable/ic_trend_up"
                             app:tint="@color/success_green" />
 
                         <TextView
@@ -401,7 +405,7 @@
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:contentDescription="@null"
-                            android:src="@android:drawable/star_big_on"
+                            android:src="@drawable/ic_star_filled"
                             app:tint="@color/primary_gold" />
 
                         <TextView
@@ -446,7 +450,7 @@
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:contentDescription="@null"
-                            android:src="@android:drawable/ic_menu_rotate"
+                            android:src="@drawable/ic_refresh"
                             app:tint="@color/primary_gold" />
 
                         <TextView
@@ -491,7 +495,7 @@
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:contentDescription="@null"
-                            android:src="@android:drawable/ic_menu_compass"
+                            android:src="@drawable/ic_verified"
                             app:tint="@color/success_green" />
 
                         <TextView
@@ -561,7 +565,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:contentDescription="@null"
-                            android:src="@android:drawable/ic_menu_myplaces"
+                            android:src="@drawable/ic_sentiment_heart"
                             app:tint="@color/text_muted" />
                     </LinearLayout>
 
@@ -875,4 +879,14 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+    </androidx.core.widget.NestedScrollView>
+
+    <ProgressBar
+        android:id="@+id/loadingProgress"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/primary_gold"
+        android:visibility="gone"
+        tools:visibility="visible" />
+</FrameLayout>

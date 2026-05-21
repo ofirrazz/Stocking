@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/hot_search_hint"
             app:boxStrokeColor="@color/primary_gold"
-            app:endIconDrawable="@android:drawable/ic_menu_search"
+            app:endIconDrawable="@drawable/ic_search"
             app:endIconMode="custom"
             app:endIconTint="@color/text_muted"
             app:hintTextColor="@color/text_muted">
@@ -65,7 +65,7 @@
                         android:background="@drawable/chip_feed_unselected"
                         android:contentDescription="@null"
                         android:padding="8dp"
-                        android:src="@android:drawable/ic_menu_day"
+                        android:src="@drawable/ic_trend_up"
                         app:tint="@color/accent_gold" />
 
                     <TextView

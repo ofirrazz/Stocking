@@ -137,7 +137,7 @@
                     app:boxCornerRadiusTopStart="16dp"
                     app:boxStrokeColor="@color/border"
                     app:hintTextColor="@color/text_muted"
-                    app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+                    app:startIconDrawable="@drawable/ic_nav_profile"
                     app:startIconTint="@color/text_muted">
 
                     <com.google.android.material.textfield.TextInputEditText
