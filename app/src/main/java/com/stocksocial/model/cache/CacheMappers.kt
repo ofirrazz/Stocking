@@ -38,7 +38,7 @@ fun CachedPostEntity.toPost(): Post = Post(
         id = authorId,
         username = authorUsername,
         email = "",
-        avatarUrl = null,
+        avatarUrl = authorAvatarUrl,
         bio = null
     ),
     content = content,
@@ -63,6 +63,7 @@ fun Post.toEntity(localImagePathOverride: String? = null): CachedPostEntity {
         id = id,
         authorId = author.id,
         authorUsername = author.username,
+        authorAvatarUrl = author.avatarUrl,
         content = content,
         createdAt = createdAt,
         createdAtMillis = millis,

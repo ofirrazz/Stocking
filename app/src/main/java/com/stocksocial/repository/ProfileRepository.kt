@@ -208,6 +208,13 @@ class ProfileRepository(
                 current.updateProfile(builder.build()).await()
             }
 
+            syncAuthorFieldsOnExistingPosts(
+                firebaseFirestore = firebaseFirestore,
+                authorId = current.uid,
+                newUsername = name.takeIf { it.isNotBlank() },
+                newPhotoUrl = photoUrl
+            )
+
             getProfile()
         } catch (e: Exception) {
             RepositoryResult.Error(e.message ?: "Failed to update profile", e)
@@ -268,6 +275,81 @@ class ProfileRepository(
         } catch (e: Exception) {
             RepositoryResult.Error(e.message ?: "Failed to follow user", e)
         }
+    }
+
+    suspend fun unfollowUserByUsername(username: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val current = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val normalized = username.trim()
+        if (normalized.isBlank()) {
+            return@withContext RepositoryResult.Error("Enter a username")
+        }
+        try {
+            val targetId = resolveUserIdByUsername(firebaseFirestore, normalized)
+                ?: return@withContext RepositoryResult.Error("User not found")
+            if (targetId == current.uid) {
+                return@withContext RepositoryResult.Error("You cannot unfollow yourself")
+            }
+            firebaseFirestore.collection("users")
+                .document(current.uid)
+                .collection("following")
+                .document(targetId)
+                .delete()
+                .await()
+            firebaseFirestore.collection("users")
+                .document(targetId)
+                .collection("followers")
+                .document(current.uid)
+                .delete()
+                .await()
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to unfollow user", e)
+        }
+    }
+
+    suspend fun isFollowingByUsername(username: String): RepositoryResult<Boolean> = withContext(Dispatchers.IO) {
+        val firebaseAuth = auth ?: return@withContext RepositoryResult.Success(false)
+        val firebaseFirestore = firestore ?: return@withContext RepositoryResult.Success(false)
+        val current = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Success(false)
+        val normalized = username.trim()
+        if (normalized.isBlank()) return@withContext RepositoryResult.Success(false)
+        try {
+            val targetId = resolveUserIdByUsername(firebaseFirestore, normalized)
+                ?: return@withContext RepositoryResult.Success(false)
+            if (targetId == current.uid) return@withContext RepositoryResult.Success(false)
+            val doc = firebaseFirestore.collection("users")
+                .document(current.uid)
+                .collection("following")
+                .document(targetId)
+                .get()
+                .await()
+            RepositoryResult.Success(doc.exists())
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to check follow state", e)
+        }
+    }
+
+    private suspend fun resolveUserIdByUsername(
+        firebaseFirestore: FirebaseFirestore,
+        username: String
+    ): String? {
+        var snap = firebaseFirestore.collection("users")
+            .whereEqualTo("usernameLower", username.lowercase())
+            .limit(1)
+            .get()
+            .await()
+        if (snap.isEmpty) {
+            snap = firebaseFirestore.collection("users")
+                .whereEqualTo("username", username)
+                .limit(1)
+                .get()
+                .await()
+        }
+        return snap.documents.firstOrNull()?.id
     }
 
     suspend fun likePost(postId: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
@@ -475,7 +557,40 @@ class ProfileRepository(
             }
         }
 
+    private suspend fun syncAuthorFieldsOnExistingPosts(
+        firebaseFirestore: FirebaseFirestore,
+        authorId: String,
+        newUsername: String?,
+        newPhotoUrl: String?
+    ) {
+        if (newUsername.isNullOrBlank() && newPhotoUrl.isNullOrBlank()) return
+        try {
+            val updates = mutableMapOf<String, Any>()
+            if (!newUsername.isNullOrBlank()) updates["authorUsername"] = newUsername
+            if (!newPhotoUrl.isNullOrBlank()) updates["authorPhotoUrl"] = newPhotoUrl
+            if (updates.isEmpty()) return
+
+            val snapshot = firebaseFirestore.collection("posts")
+                .whereEqualTo("authorId", authorId)
+                .limit(MAX_POSTS_PER_SYNC)
+                .get()
+                .await()
+            if (snapshot.isEmpty) return
+
+            snapshot.documents.chunked(FIRESTORE_BATCH_LIMIT).forEach { chunk ->
+                val batch = firebaseFirestore.batch()
+                chunk.forEach { doc -> batch.update(doc.reference, updates) }
+                batch.commit().await()
+            }
+        } catch (_: Exception) {
+            // Best-effort sync; failures here should not break profile update.
+        }
+    }
+
     companion object {
+        private const val FIRESTORE_BATCH_LIMIT = 400
+        private const val MAX_POSTS_PER_SYNC: Long = 500
+
         const val MESSAGE_ALREADY_LIKED = "ALREADY_LIKED"
 
         private const val FIREBASE_NOT_CONFIGURED_MESSAGE =
