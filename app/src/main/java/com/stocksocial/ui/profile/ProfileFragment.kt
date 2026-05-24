@@ -46,7 +46,7 @@ class ProfileFragment : Fragment() {
                 val direction = ProfileFragmentDirections.actionProfileFragmentToPostDetailsFragment(post.id)
                 findNavController().navigate(direction)
             },
-            onLikeClick = { post -> profileViewModel.likePost(post.id) },
+            onLikeClick = { post -> profileViewModel.toggleLikePost(post.id) },
             onCommentClick = { post -> openCommentsSheet(post.id) },
             onEditClick = { post ->
                 val direction = ProfileFragmentDirections.actionProfileFragmentToPostDetailsFragment(post.id)
@@ -181,15 +181,11 @@ class ProfileFragment : Fragment() {
 
         profileViewModel.likePostStateLive.observe(viewLifecycleOwner) { state ->
             if (!state.errorMessage.isNullOrBlank()) {
-                val msg = if (state.errorMessage == ProfileRepository.MESSAGE_ALREADY_LIKED) {
-                    getString(R.string.already_liked_post)
-                } else {
-                    state.errorMessage
+                if (state.errorMessage != ProfileRepository.MESSAGE_ALREADY_LIKED) {
+                    Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 profileViewModel.consumeLikePostState()
             } else if (state.data != null) {
-                Toast.makeText(requireContext(), R.string.post_liked, Toast.LENGTH_SHORT).show()
                 profileViewModel.consumeLikePostState()
                 profileViewModel.loadProfile()
                 profileViewModel.loadMyPosts()
@@ -218,6 +214,7 @@ class ProfileFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        profileViewModel.loadProfile()
         profileViewModel.loadMyPosts()
     }
 

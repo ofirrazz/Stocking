@@ -1,5 +1,7 @@
 package com.stocksocial.repository
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.stocksocial.BuildConfig
 import com.stocksocial.model.FeedHotStockCategory
 import com.stocksocial.model.Stock
@@ -11,11 +13,63 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class WatchlistRepository(
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val firestore: FirebaseFirestore? = null,
+    private val auth: FirebaseAuth? = null
 ) {
+
+    /**
+     * Returns the favorite symbols of [uid] (stored under `users/{uid}/favoriteSymbols`).
+     * Falls back to an empty list when Firebase is unavailable or the user has no favorites yet.
+     */
+    suspend fun getUserWatchlist(uid: String): RepositoryResult<List<WatchlistItem>> =
+        withContext(Dispatchers.IO) {
+            val firebaseFirestore = firestore
+                ?: return@withContext RepositoryResult.Success(emptyList())
+            if (uid.isBlank()) return@withContext RepositoryResult.Success(emptyList())
+            val symbols = try {
+                firebaseFirestore.collection("users")
+                    .document(uid)
+                    .collection("favoriteSymbols")
+                    .get()
+                    .await()
+                    .documents
+                    .mapNotNull { it.getString("symbol")?.trim()?.uppercase()?.takeIf { s -> s.isNotEmpty() } }
+                    .distinct()
+            } catch (_: Exception) {
+                emptyList()
+            }
+            if (symbols.isEmpty()) return@withContext RepositoryResult.Success(emptyList())
+            if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
+                val items = symbols.mapIndexed { index, symbol ->
+                    WatchlistItem(
+                        id = "user_${uid}_$index",
+                        userId = uid,
+                        stock = Stock(symbol = symbol, name = SYMBOL_NAMES[symbol] ?: symbol, price = 0.0, dailyChangePercent = 0.0),
+                        createdAt = ""
+                    )
+                }
+                return@withContext RepositoryResult.Success(items)
+            }
+            try {
+                val stocks = fetchStocks(symbols)
+                val items = stocks.mapIndexed { index, stock ->
+                    WatchlistItem(
+                        id = "user_${uid}_$index",
+                        userId = uid,
+                        stock = stock,
+                        createdAt = ""
+                    )
+                }
+                RepositoryResult.Success(items)
+            } catch (e: Exception) {
+                RepositoryResult.Error(e.message ?: "Failed to load watchlist", e)
+            }
+        }
 
     suspend fun getWatchlist(): RepositoryResult<List<WatchlistItem>> = withContext(Dispatchers.IO) {
         if (BuildConfig.FINNHUB_TOKEN.isBlank()) {

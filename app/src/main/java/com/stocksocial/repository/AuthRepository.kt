@@ -9,6 +9,8 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.stocksocial.data.local.ArticleDao
+import com.stocksocial.data.local.PostDao
 import com.stocksocial.model.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
@@ -16,7 +18,9 @@ import kotlinx.coroutines.withContext
 
 class AuthRepository(
     private val auth: FirebaseAuth?,
-    private val firestore: FirebaseFirestore?
+    private val firestore: FirebaseFirestore?,
+    private val postDao: PostDao? = null,
+    private val articleDao: ArticleDao? = null
 ) {
 
     suspend fun login(emailOrUsername: String, password: String): RepositoryResult<User> =
@@ -42,31 +46,29 @@ class AuthRepository(
             val firebaseAuth = auth
                 ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
             try {
+                val firebaseFirestore = firestore
+                    ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+                val trimmedName = username.trim()
+                when (val availability = UserFirestoreHelper.checkUsernameAvailability(firebaseFirestore, trimmedName)) {
+                    UserFirestoreHelper.UsernameAvailability.Taken ->
+                        return@withContext RepositoryResult.Error("This username is already taken.")
+                    is UserFirestoreHelper.UsernameAvailability.Unknown ->
+                        return@withContext RepositoryResult.Error(
+                            "Could not verify username availability. Check your connection and try again.",
+                            availability.cause
+                        )
+                    UserFirestoreHelper.UsernameAvailability.Available -> Unit
+                }
                 val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
                 val u = result.user ?: return@withContext RepositoryResult.Error("Registration failed")
                 u.updateProfile(
-                    UserProfileChangeRequest.Builder().setDisplayName(username).build()
+                    UserProfileChangeRequest.Builder().setDisplayName(trimmedName).build()
                 ).await()
-                val trimmedName = username.trim()
-                val userDoc = hashMapOf(
-                    "username" to trimmedName,
-                    "usernameLower" to trimmedName.lowercase(),
-                    "displayName" to trimmedName,
-                    "email" to email,
-                    "photoUrl" to "",
-                    "bio" to "",
-                    "location" to "",
-                    "website" to "",
-                    "bannerUrl" to "",
-                    "createdAt" to System.currentTimeMillis()
+                UserFirestoreHelper.ensureUserProfileDocument(
+                    firestore = firebaseFirestore,
+                    user = u,
+                    preferredUsername = trimmedName
                 )
-                // Firestore profile is optional for successful auth.
-                // If rules/network fail here, user can still continue into the app.
-                try {
-                    firestore?.collection("users")?.document(u.uid)?.set(userDoc)?.await()
-                } catch (_: Exception) {
-                    // Ignore Firestore profile write failures and rely on FirebaseAuth profile.
-                }
                 RepositoryResult.Success(
                     User(
                         id = u.uid,
@@ -88,6 +90,28 @@ class AuthRepository(
             }
         }
 
+    /**
+     * Sends a password reset email to [email] via Firebase Auth. Returns an error if the
+     * email is invalid or Firebase is not configured.
+     */
+    suspend fun sendPasswordReset(email: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val trimmed = email.trim()
+        if (trimmed.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(trimmed).matches()) {
+            return@withContext RepositoryResult.Error("Enter a valid email address.")
+        }
+        try {
+            firebaseAuth.sendPasswordResetEmail(trimmed).await()
+            RepositoryResult.Success(Unit)
+        } catch (e: FirebaseAuthInvalidUserException) {
+            // We intentionally do not reveal whether the email is registered.
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to send reset email", e)
+        }
+    }
+
     suspend fun signInWithGoogle(idToken: String): RepositoryResult<User> =
         withContext(Dispatchers.IO) {
             val firebaseAuth = auth
@@ -105,31 +129,8 @@ class AuthRepository(
 
     private suspend fun ensureFirestoreUserDoc(u: FirebaseUser) {
         val firebaseFirestore = firestore ?: return
-        val ref = firebaseFirestore.collection("users").document(u.uid)
-        val snap = try {
-            ref.get().await()
-        } catch (_: Exception) {
-            return
-        }
-        if (snap.exists()) return
-        val trimmedName = u.displayName?.trim()?.takeIf { it.isNotEmpty() }
-            ?: u.email?.substringBefore("@")?.trim()?.takeIf { it.isNotEmpty() }
-            ?: "user"
-        val photo = u.photoUrl?.toString().orEmpty()
-        val userDoc = hashMapOf(
-            "username" to trimmedName,
-            "usernameLower" to trimmedName.lowercase(),
-            "displayName" to trimmedName,
-            "email" to u.email.orEmpty(),
-            "photoUrl" to photo,
-            "bio" to "",
-            "location" to "",
-            "website" to "",
-            "bannerUrl" to "",
-            "createdAt" to System.currentTimeMillis()
-        )
         try {
-            ref.set(userDoc).await()
+            UserFirestoreHelper.ensureUserProfileDocument(firebaseFirestore, u)
         } catch (_: Exception) {
         }
     }
@@ -160,10 +161,19 @@ class AuthRepository(
     }
 
     private suspend fun mapFirebaseUser(u: FirebaseUser): User {
+        val firebaseFirestore = firestore
         val doc = try {
-            firestore?.collection("users")?.document(u.uid)?.get()?.await()
+            if (firebaseFirestore != null) {
+                UserFirestoreHelper.ensureUserProfileDocument(firebaseFirestore, u)
+            } else {
+                null
+            }
         } catch (_: Exception) {
-            null
+            try {
+                firebaseFirestore?.collection("users")?.document(u.uid)?.get()?.await()
+            } catch (_: Exception) {
+                null
+            }
         }
         val username = doc?.getString("username")
             ?: u.displayName
@@ -180,8 +190,10 @@ class AuthRepository(
         )
     }
 
-    fun logout() {
+    suspend fun logout() = withContext(Dispatchers.IO) {
         auth?.signOut()
+        postDao?.deleteAll()
+        articleDao?.deleteAll()
     }
 
     companion object {

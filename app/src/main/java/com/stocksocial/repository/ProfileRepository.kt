@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
 import com.stocksocial.data.local.PostDao
@@ -83,21 +84,40 @@ class ProfileRepository(
         val u = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
         try {
             val userRef = firebaseFirestore.collection("users").document(u.uid)
+            // Each sub-query catches its own error and returns a sensible default so that
+            // a single broken read (e.g. a temporarily missing follower-subcollection rule
+            // or a network hiccup on one parallel call) doesn't blank the whole profile.
             val loads = coroutineScope {
-                val docD = async { userRef.get().await() }
-                val folD = async { userRef.collection("followers").get().await() }
-                val ingD = async { userRef.collection("following").get().await() }
-                val postsD = async {
-                    firebaseFirestore.collection("posts")
-                        .whereEqualTo("authorId", u.uid)
-                        .limit(500)
-                        .get()
-                        .await()
+                val docD = async {
+                    runCatching {
+                        UserFirestoreHelper.ensureUserProfileDocument(firebaseFirestore, u)
+                    }.getOrElse {
+                        runCatching { userRef.get().await() }.getOrNull()
+                    }
                 }
-                TupleProfileLoads(
+                val folD = async {
+                    runCatching {
+                        userRef.collection("followers").get().await().size()
+                    }.getOrDefault(0)
+                }
+                val ingD = async {
+                    runCatching {
+                        userRef.collection("following").get().await().size()
+                    }.getOrDefault(0)
+                }
+                val postsD = async {
+                    runCatching {
+                        firebaseFirestore.collection("posts")
+                            .whereEqualTo("authorId", u.uid)
+                            .limit(500)
+                            .get()
+                            .await()
+                    }.getOrNull()
+                }
+                TupleProfileLoadsLenient(
                     doc = docD.await(),
-                    followers = folD.await().size(),
-                    following = ingD.await().size(),
+                    followers = folD.await(),
+                    following = ingD.await(),
                     postsSnap = postsD.await()
                 )
             }
@@ -105,20 +125,30 @@ class ProfileRepository(
             val followersN = loads.followers
             val followingN = loads.following
             val postsSnap = loads.postsSnap
-            val username = doc.getString("username")
+            val username = doc?.getString("username")
                 ?: u.displayName
                 ?: u.email?.substringBefore("@")
                 ?: "user"
-            val displayName = doc.getString("displayName")?.takeIf { it.isNotBlank() } ?: username
-            val postsCount = postsSnap.size()
-            val totalLikes = postsSnap.documents.sumOf { (it.getLong("likesCount") ?: 0L).toInt() }
+            val displayName = doc?.getString("displayName")?.takeIf { it.isNotBlank() } ?: username
+            // If posts query failed, fall back to the local Room cache so that the user
+            // still sees a non-zero post count for posts they published earlier.
+            val postsCount: Int
+            val totalLikes: Int
+            if (postsSnap != null) {
+                postsCount = postsSnap.size()
+                totalLikes = postsSnap.documents.sumOf { (it.getLong("likesCount") ?: 0L).toInt() }
+            } else {
+                val cached = postDao.getAll().filter { it.authorId == u.uid }
+                postsCount = cached.size
+                totalLikes = cached.sumOf { it.likesCount }
+            }
             RepositoryResult.Success(
                 User(
                     id = u.uid,
                     username = username,
                     email = u.email.orEmpty(),
-                    avatarUrl = doc.getString("photoUrl")?.takeIf { it.isNotBlank() },
-                    bio = doc.getString("bio"),
+                    avatarUrl = doc?.getString("photoUrl")?.takeIf { it.isNotBlank() },
+                    bio = doc?.getString("bio"),
                     displayName = displayName,
                     postsCount = postsCount,
                     followersCount = followersN,
@@ -131,11 +161,11 @@ class ProfileRepository(
         }
     }
 
-    private data class TupleProfileLoads(
-        val doc: com.google.firebase.firestore.DocumentSnapshot,
+    private data class TupleProfileLoadsLenient(
+        val doc: com.google.firebase.firestore.DocumentSnapshot?,
         val followers: Int,
         val following: Int,
-        val postsSnap: com.google.firebase.firestore.QuerySnapshot
+        val postsSnap: com.google.firebase.firestore.QuerySnapshot?
     )
 
     suspend fun getMyPosts(): RepositoryResult<List<Post>> = withContext(Dispatchers.IO) {
@@ -145,13 +175,26 @@ class ProfileRepository(
             ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
         val u = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
         try {
-            val snap = firebaseFirestore.collection("posts")
-                .whereEqualTo("authorId", u.uid)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(50)
-                .get()
-                .await()
-            val entities = snap.documents.mapNotNull { doc ->
+            val docs = try {
+                firebaseFirestore.collection("posts")
+                    .whereEqualTo("authorId", u.uid)
+                    .orderBy("createdAt", Query.Direction.DESCENDING)
+                    .limit(50)
+                    .get()
+                    .await()
+                    .documents
+            } catch (e: FirebaseFirestoreException) {
+                if (e.code == FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
+                    firebaseFirestore.collection("posts")
+                        .whereEqualTo("authorId", u.uid)
+                        .limit(50)
+                        .get()
+                        .await()
+                        .documents
+                        .sortedByDescending { it.getLong("createdAt") ?: 0L }
+                } else throw e
+            }
+            val entities = docs.mapNotNull { doc ->
                 val existing = postDao.getById(doc.id)
                 doc.toCachedPostEntity(existing?.localImagePath, u.uid)
             }
@@ -192,8 +235,9 @@ class ProfileRepository(
             val updates = mutableMapOf<String, Any>()
             val name = newName?.trim().orEmpty()
             if (name.isNotBlank()) {
-                updates["username"] = name
-                updates["usernameLower"] = name.lowercase()
+                // We treat the edit-profile field as the *display* name only. The username
+                // (`@handle`) is immutable post-registration so that follow-by-username and
+                // shared links keep working.
                 updates["displayName"] = name
             }
             if (!photoUrl.isNullOrBlank()) updates["photoUrl"] = photoUrl
@@ -406,6 +450,61 @@ class ProfileRepository(
         }
     }
 
+    /**
+     * Removes the current user's like from [postId]. Idempotent: returns success if the user
+     * has not liked the post.
+     */
+    suspend fun unlikePost(postId: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val firebaseAuth = auth
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
+        val current = firebaseAuth.currentUser ?: return@withContext RepositoryResult.Error("Not signed in")
+        val postRef = firebaseFirestore.collection("posts").document(postId)
+        try {
+            firebaseFirestore.runTransaction { transaction ->
+                val snap = transaction.get(postRef)
+                if (!snap.exists()) return@runTransaction
+                val raw = snap.get("likedUserIds")
+                val liked = when (raw) {
+                    is List<*> -> raw.filterIsInstance<String>().toSet()
+                    else -> emptySet()
+                }
+                if (current.uid !in liked) return@runTransaction
+                transaction.update(
+                    postRef,
+                    mapOf(
+                        "likedUserIds" to FieldValue.arrayRemove(current.uid),
+                        "likesCount" to FieldValue.increment(-1)
+                    )
+                )
+            }.await()
+
+            val local = postDao.getById(postId)
+            if (local != null && local.likedByCurrentUser) {
+                postDao.upsert(
+                    local.copy(
+                        likesCount = (local.likesCount - 1).coerceAtLeast(0),
+                        likedByCurrentUser = false
+                    )
+                )
+            }
+            RepositoryResult.Success(Unit)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to unlike post", e)
+        }
+    }
+
+    /** Like or unlike based on the current local state. Toggles atomically. */
+    suspend fun toggleLikePost(postId: String): RepositoryResult<Unit> = withContext(Dispatchers.IO) {
+        val local = postDao.getById(postId)
+        return@withContext if (local?.likedByCurrentUser == true) {
+            unlikePost(postId)
+        } else {
+            likePost(postId)
+        }
+    }
+
     suspend fun getPublicProfileByUsername(username: String): RepositoryResult<PublicUserProfile> =
         withContext(Dispatchers.IO) {
             val firebaseFirestore = firestore
@@ -477,18 +576,50 @@ class ProfileRepository(
             ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
         if (userId.isBlank()) return@withContext RepositoryResult.Error("Invalid user")
         try {
-            val snap = firebaseFirestore.collection("posts")
+            val viewerUid = auth?.currentUser?.uid
+            val posts = fetchPostsByAuthor(firebaseFirestore, userId, viewerUid)
+            RepositoryResult.Success(posts)
+        } catch (e: Exception) {
+            RepositoryResult.Error(e.message ?: "Failed to load posts", e)
+        }
+    }
+
+    /**
+     * Loads posts authored by [userId], sorted newest-first.
+     *
+     * Firestore requires a composite index for `where(authorId) + orderBy(createdAt desc)`.
+     * If the index is missing (cold-start of a fresh project), we still want the screen
+     * to work, so we fall back to a query without `orderBy` and sort the (small, limit=50)
+     * result set client-side.
+     */
+    private suspend fun fetchPostsByAuthor(
+        firebaseFirestore: FirebaseFirestore,
+        userId: String,
+        viewerUid: String?
+    ): List<Post> {
+        val docs = try {
+            firebaseFirestore.collection("posts")
                 .whereEqualTo("authorId", userId)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(50)
                 .get()
                 .await()
-            val viewerUid = auth?.currentUser?.uid
-            val posts = snap.documents.mapNotNull { it.toPost(currentUserId = viewerUid) }
-            RepositoryResult.Success(posts)
-        } catch (e: Exception) {
-            RepositoryResult.Error(e.message ?: "Failed to load posts", e)
+                .documents
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code == FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
+                // Composite index not yet created — fetch without orderBy and sort locally.
+                firebaseFirestore.collection("posts")
+                    .whereEqualTo("authorId", userId)
+                    .limit(50)
+                    .get()
+                    .await()
+                    .documents
+                    .sortedByDescending { it.getLong("createdAt") ?: 0L }
+            } else {
+                throw e
+            }
         }
+        return docs.mapNotNull { it.toPost(currentUserId = viewerUid) }
     }
 
     suspend fun getFavoriteSymbolList(): RepositoryResult<List<String>> = withContext(Dispatchers.IO) {

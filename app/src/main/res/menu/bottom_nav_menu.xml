@@ -13,6 +13,10 @@
         android:icon="@drawable/ic_trend_up"
         android:title="@string/nav_hot_stocks" />
     <item
+        android:id="@+id/articlesFragment"
+        android:icon="@drawable/ic_nav_articles"
+        android:title="@string/articles" />
+    <item
         android:id="@+id/profileFragment"
         android:icon="@drawable/ic_nav_profile"
         android:title="@string/profile" />

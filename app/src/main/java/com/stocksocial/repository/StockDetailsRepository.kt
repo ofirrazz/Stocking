@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
 
 class StockDetailsRepository(
     private val apiService: ApiService,
-    private val firestore: FirebaseFirestore,
+    private val firestore: FirebaseFirestore?,
     private val auth: FirebaseAuth? = null
 ) {
     suspend fun getPriceHistory(symbol: String): RepositoryResult<PriceChartSeries> = withContext(Dispatchers.IO) {
@@ -97,23 +97,37 @@ class StockDetailsRepository(
         }
 
     suspend fun getPostsForSymbol(symbol: String): RepositoryResult<List<Post>> = withContext(Dispatchers.IO) {
+        val firebaseFirestore = firestore
+            ?: return@withContext RepositoryResult.Success(emptyList())
         try {
             val uid = auth?.currentUser?.uid
             val normalized = symbol.trim().uppercase()
-            val byField = firestore.collection("posts")
-                .whereEqualTo("stockSymbol", normalized)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(30)
-                .get()
-                .await()
-                .documents
-                .mapNotNull { it.toPost(currentUserId = uid) }
+            val byFieldDocs = try {
+                firebaseFirestore.collection("posts")
+                    .whereEqualTo("stockSymbol", normalized)
+                    .orderBy("createdAt", Query.Direction.DESCENDING)
+                    .limit(30)
+                    .get()
+                    .await()
+                    .documents
+            } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+                if (e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
+                    firebaseFirestore.collection("posts")
+                        .whereEqualTo("stockSymbol", normalized)
+                        .limit(30)
+                        .get()
+                        .await()
+                        .documents
+                        .sortedByDescending { it.getLong("createdAt") ?: 0L }
+                } else throw e
+            }
+            val byField = byFieldDocs.mapNotNull { it.toPost(currentUserId = uid) }
 
             if (byField.isNotEmpty()) {
                 return@withContext RepositoryResult.Success(byField)
             }
 
-            val allRecent = firestore.collection("posts")
+            val allRecent = firebaseFirestore.collection("posts")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(80)
                 .get()

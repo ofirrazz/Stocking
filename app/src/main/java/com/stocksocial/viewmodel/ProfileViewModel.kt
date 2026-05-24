@@ -121,6 +121,22 @@ class ProfileViewModel(
         }
     }
 
+    /** Like the post if not yet liked, otherwise unlike it. Reloads my posts on success. */
+    fun toggleLikePost(postId: String) {
+        viewModelScope.launch {
+            _likePostState.value = UiState(isLoading = true)
+            when (val result = profileRepository.toggleLikePost(postId)) {
+                is RepositoryResult.Success -> {
+                    _likePostState.value = UiState(data = Unit)
+                    loadMyPosts()
+                }
+                is RepositoryResult.Error -> {
+                    _likePostState.value = UiState(errorMessage = result.message)
+                }
+            }
+        }
+    }
+
     fun consumeLikePostState() {
         _likePostState.value = UiState()
     }

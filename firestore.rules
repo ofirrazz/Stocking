@@ -9,8 +9,11 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    // Public profile data must be readable without auth so the registration screen can
+    // verify username uniqueness BEFORE the user is created in Firebase Auth.
+    // Writes are still restricted to the document owner.
     match /users/{userId} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if isOwner(userId);
       allow delete: if false;
 
@@ -44,13 +47,19 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
       allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      // Author can update everything on their post.
       allow update: if signedIn() && resource.data.authorId == request.auth.uid;
+      // Any signed-in user can update like counters and the comments counter
+      // (the actual like is recorded inside `likedUserIds` which we restrict to this set).
       allow update: if signedIn() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'lastLikedBy']);
-    }
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likesCount', 'likedUserIds', 'lastLikedBy', 'commentsCount']);
 
-    match /connection_test/{docId} {
-      allow read, write: if signedIn();
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      }
     }
   }
 }

@@ -4,17 +4,23 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentLoginBinding
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.utils.buildGoogleSignInClient
+import com.stocksocial.utils.googleSignInErrorMessage
 import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.AuthViewModel
 
@@ -37,8 +43,8 @@ class LoginFragment : Fragment() {
         } catch (e: ApiException) {
             Toast.makeText(
                 requireContext(),
-                getString(R.string.google_signin_failed, e.message ?: e.statusCode.toString()),
-                Toast.LENGTH_SHORT
+                googleSignInErrorMessage(requireContext(), e),
+                Toast.LENGTH_LONG
             ).show()
         }
     }
@@ -58,6 +64,14 @@ class LoginFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.emailInput.focusAndShowKeyboard()
 
+        binding.backButton.setOnClickListener { navigateBackToWelcome() }
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() = navigateBackToWelcome()
+            }
+        )
+
         viewModel.authStateLive.observe(viewLifecycleOwner) { state ->
             binding.loginButton.isEnabled = !state.isLoading
             binding.googleLoginButton.isEnabled = !state.isLoading
@@ -65,6 +79,7 @@ class LoginFragment : Fragment() {
             binding.loginProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             state.errorMessage?.let { msg ->
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+                viewModel.consumeAuthState()
             }
             val authenticated = state.data?.isAuthenticated == true
             if (authenticated && findNavController().currentDestination?.id == R.id.loginFragment) {
@@ -95,6 +110,56 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
             googleSignInLauncher.launch(client.signInIntent)
+        }
+
+        binding.forgotPasswordText.setOnClickListener { showForgotPasswordDialog() }
+
+        viewModel.resetPasswordStateLive.observe(viewLifecycleOwner) { state ->
+            if (state.isLoading) return@observe
+            if (!state.errorMessage.isNullOrBlank()) {
+                Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_LONG).show()
+                viewModel.consumeResetPasswordState()
+            } else if (state.data != null) {
+                Toast.makeText(requireContext(), R.string.forgot_password_sent, Toast.LENGTH_LONG).show()
+                viewModel.consumeResetPasswordState()
+            }
+        }
+    }
+
+    private fun showForgotPasswordDialog() {
+        val context = requireContext()
+        val container = TextInputLayout(context)
+        val input = TextInputEditText(context).apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            hint = getString(R.string.forgot_password_email_hint)
+            setText(binding.emailInput.text?.toString()?.trim().orEmpty())
+        }
+        container.addView(input)
+        val padding = (resources.displayMetrics.density * 16).toInt()
+        container.setPadding(padding, padding, padding, 0)
+        AlertDialog.Builder(context)
+            .setTitle(R.string.forgot_password_dialog_title)
+            .setMessage(R.string.forgot_password_dialog_message)
+            .setView(container)
+            .setPositiveButton(R.string.forgot_password_send) { dialog, _ ->
+                val email = (input as EditText).text?.toString()?.trim().orEmpty()
+                if (email.isEmpty() ||
+                    !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                ) {
+                    Toast.makeText(context, R.string.forgot_password_invalid_email, Toast.LENGTH_SHORT).show()
+                } else {
+                    viewModel.sendPasswordReset(email)
+                    dialog.dismiss()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun navigateBackToWelcome() {
+        if (!findNavController().popBackStack(R.id.welcomeFragment, false)) {
+            findNavController().navigate(R.id.welcomeFragment)
         }
     }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">SocialStock</string>
+    <string name="app_name">StockSocial</string>
     <string name="nav_portfolio">Portfolio</string>
     <string name="nav_hot_stocks">Trending</string>
     <string name="welcome_title">Welcome</string>
@@ -23,14 +23,21 @@
     <string name="email_label">Email</string>
     <string name="password_label">Password</string>
     <string name="forgot_password">Forgot password?</string>
+    <string name="forgot_password_dialog_title">Reset password</string>
+    <string name="forgot_password_dialog_message">Enter the email of your account. We will send you a link to reset your password.</string>
+    <string name="forgot_password_email_hint">your@email.com</string>
+    <string name="forgot_password_send">Send link</string>
+    <string name="forgot_password_invalid_email">Enter a valid email address.</string>
+    <string name="forgot_password_sent">Reset email sent. Check your inbox.</string>
+    <string name="forgot_password_failed">Could not send reset email. Try again.</string>
     <string name="login_primary">Sign in</string>
     <string name="signup_prompt">No account yet? Register</string>
-    <string name="register_title_he">SocialStock — join us</string>
+    <string name="register_title_he">StockSocial — join us</string>
     <string name="register_subtitle_he">Create an account and start investing smarter</string>
     <string name="full_name_label">Full name</string>
     <string name="full_name_hint">Jane Doe</string>
     <string name="email_hint_sample">example@email.com</string>
-    <string name="password_hint_min">At least 8 characters</string>
+    <string name="password_hint_min">At least 6 characters</string>
     <string name="register_primary">Create account</string>
     <string name="register_terms">By registering you agree to the Terms of Use and Privacy Policy</string>
     <string name="login_prompt">Already have an account? Sign in</string>
@@ -77,9 +84,8 @@
     <string name="category_technology">Technology</string>
     <string name="category_automotive">Automotive</string>
     <string name="profile">Profile</string>
-    <string name="profile_full_name">Ofir Raz</string>
-    <string name="profile_username">@ofirrazz</string>
-    <string name="profile_bio">Building StockSocial for investors, traders and market creators.</string>
+    <string name="profile_loading_name">Loading…</string>
+    <string name="profile_loading_username">@…</string>
     <string name="profile_posts">Posts</string>
     <string name="profile_followers">Followers</string>
     <string name="profile_likes_label">Likes</string>
@@ -171,6 +177,10 @@
     <string name="share_stock_text_template">Check out %1$s on StockSocial!</string>
     <string name="fill_login_fields">Enter email and password</string>
     <string name="fill_register_fields">Fill all fields</string>
+    <string name="confirm_password_label">Confirm password</string>
+    <string name="confirm_password_hint">Re-enter your password</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="password_too_short">Password must be at least 6 characters</string>
     <string name="post_needs_content">Add text, a photo, or a video</string>
     <string name="published_ok">Post published</string>
     <string name="post_liked">Post liked</string>
@@ -212,6 +222,9 @@
     <string name="stock_stat_volume_help">Volume is the number of shares traded today. Higher volume means more activity and easier buying/selling near the current price. Very low volume can make trades move the price more.</string>
     <string name="stock_favorite_toast">Favorites — coming soon</string>
     <string name="stock_add_portfolio_toast">Add to portfolio — coming soon</string>
+    <string name="default_shares_one" translatable="false">1</string>
+    <string name="add_to_portfolio_title">Add %1$s to portfolio</string>
+    <string name="add_portfolio_invalid_shares">Enter a positive number of shares</string>
     <string name="stock_sentiment_percent">%1$d%%</string>
     <string name="stock_no_recommendations">No recommendation data available right now.</string>
     <string name="user_profile_posts_count">%1$d posts</string>
@@ -224,13 +237,16 @@
     <string name="user_profile_tab_posts">Posts</string>
     <string name="user_profile_tab_portfolio">Portfolio</string>
     <string name="user_profile_tab_watchlist">Watchlist</string>
-    <string name="user_profile_watchlist_hint">Suggested watchlist from the app (not user-specific).</string>
+    <string name="user_profile_watchlist_hint">Symbols this user is tracking.</string>
+    <string name="user_profile_watchlist_empty">This user has not added any favorite symbols yet.</string>
     <string name="user_profile_not_found">User not found</string>
     <string name="user_profile_joined_fmt">Joined %1$s</string>
 
     <!-- Web client ID (OAuth client type 3) from Firebase google-services.json after enabling Google Sign-In. -->
     <string name="default_web_client_id" translatable="false">654488883410-flujfgljk4nc1mk5nvlii9qqmfkn3oi8.apps.googleusercontent.com</string>
     <string name="google_signin_web_client_missing">Add the Web client ID to default_web_client_id in strings (after enabling Google in Firebase and refreshing google-services.json).</string>
-    <string name="google_signin_no_token">No token from Google — ensure the app SHA-1 is set in Firebase.</string>
-    <string name="google_signin_failed">Google: %1$s</string>
+    <string name="google_signin_no_token">No token from Google. Add this computer\'s SHA-1 in Firebase (Project settings → Android app → Add fingerprint), then rebuild.</string>
+    <string name="google_signin_developer_error">Google Sign-In config error (code 10). In Firebase Console add SHA-1 fingerprint for debug, enable Google under Authentication, then download a new google-services.json.</string>
+    <string name="google_signin_cancelled">Google sign-in was cancelled.</string>
+    <string name="google_signin_failed">Google sign-in failed (code %1$d): %2$s</string>
 </resources>
