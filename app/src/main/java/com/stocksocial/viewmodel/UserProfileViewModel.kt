@@ -72,7 +72,7 @@ class UserProfileViewModel(
                     coroutineScope {
                         val postsD = async { profileRepository.getPostsByUserId(p.userId) }
                         val portD = async { portfolioRepository.getHoldingsForUser(p.userId) }
-                        val wlD = async { watchlistRepository.getWatchlist() }
+                        val wlD = async { watchlistRepository.getUserWatchlist(p.userId) }
                         when (val posts = postsD.await()) {
                             is RepositoryResult.Success -> _postsState.value = UiState(data = posts.data)
                             is RepositoryResult.Error -> _postsState.value =

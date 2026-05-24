@@ -9,12 +9,14 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentStockDetailsBinding
 import com.stocksocial.model.AnalystRecommendation
@@ -23,6 +25,7 @@ import com.stocksocial.model.Stock
 import com.stocksocial.ui.adapters.StockPostsAdapter
 import com.stocksocial.ui.adapters.StockUiFormatter
 import com.stocksocial.utils.appViewModelFactory
+import com.stocksocial.viewmodel.PortfolioViewModel
 import com.stocksocial.viewmodel.StockDetailsViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -35,6 +38,7 @@ class StockDetailsFragment : Fragment() {
 
     private val args: StockDetailsFragmentArgs by navArgs()
     private val viewModel: StockDetailsViewModel by viewModels { appViewModelFactory }
+    private val portfolioViewModel: PortfolioViewModel by viewModels { appViewModelFactory }
     private val postsAdapter = StockPostsAdapter(
         onPostClick = { post ->
             val dir = StockDetailsFragmentDirections.actionStockDetailsFragmentToPostDetailsFragment(post.id)
@@ -58,8 +62,17 @@ class StockDetailsFragment : Fragment() {
         binding.favoriteButton.setOnClickListener {
             viewModel.toggleFavorite(args.symbol.uppercase(Locale.US))
         }
-        binding.addPortfolioButton.setOnClickListener {
-            Toast.makeText(requireContext(), R.string.stock_add_portfolio_toast, Toast.LENGTH_SHORT).show()
+        binding.addPortfolioButton.setOnClickListener { showAddToPortfolioDialog() }
+
+        portfolioViewModel.upsertStateLive.observe(viewLifecycleOwner) { state ->
+            if (state.isLoading) return@observe
+            if (!state.errorMessage.isNullOrBlank()) {
+                Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
+                portfolioViewModel.consumeUpsertState()
+            } else if (state.data != null) {
+                Toast.makeText(requireContext(), R.string.holding_saved, Toast.LENGTH_SHORT).show()
+                portfolioViewModel.consumeUpsertState()
+            }
         }
 
         binding.tabOverviewButton.setOnClickListener { selectTab(0) }
@@ -245,6 +258,47 @@ class StockDetailsFragment : Fragment() {
             .setMessage(bodyRes)
             .setPositiveButton(R.string.stock_info_close, null)
             .show()
+    }
+
+    private fun showAddToPortfolioDialog() {
+        val symbol = args.symbol.uppercase(Locale.US)
+        val view = layoutInflater.inflate(R.layout.dialog_add_to_portfolio, null)
+        view.findViewById<TextView>(R.id.symbolLabel).text = "$$symbol"
+
+        val sharesInput = view.findViewById<TextInputEditText>(R.id.sharesInput)
+        val priceInput = view.findViewById<TextInputEditText>(R.id.buyPriceInput)
+        val livePrice = viewModel.quoteStateLive.value?.data?.price
+        if (livePrice != null && livePrice > 0.0) {
+            priceInput.setText(String.format(Locale.US, "%.2f", livePrice))
+        }
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.add_to_portfolio_title, symbol))
+            .setView(view)
+            .setPositiveButton(R.string.save_holding, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val sharesText = sharesInput.text?.toString().orEmpty().replace(",", ".")
+                val priceText = priceInput.text?.toString().orEmpty().replace(",", ".")
+                val shares = sharesText.toDoubleOrNull() ?: 0.0
+                val price = priceText.toDoubleOrNull() ?: 0.0
+                if (shares <= 0.0) {
+                    Toast.makeText(requireContext(), R.string.add_portfolio_invalid_shares, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                if (price <= 0.0) {
+                    Toast.makeText(requireContext(), R.string.portfolio_invalid_buy_price, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                val name = viewModel.quoteStateLive.value?.data?.name
+                portfolioViewModel.addOrUpdateHolding(symbol, price, shares, name)
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
     }
 
     private fun formatRecommendations(latest: AnalystRecommendation?): String {

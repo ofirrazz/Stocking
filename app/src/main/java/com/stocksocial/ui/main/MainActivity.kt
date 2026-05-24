@@ -3,6 +3,7 @@ package com.stocksocial.ui.main
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -17,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     private var navController: NavController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -36,17 +38,22 @@ class MainActivity : AppCompatActivity() {
         val controller = navHost.navController
         navController = controller
 
-        val authDestinations = setOf(
-            R.id.welcomeFragment,
-            R.id.loginFragment,
-            R.id.registerFragment
-        )
-        if (isFirebaseConfigured() && FirebaseAuth.getInstance().currentUser != null) {
-            val dest = controller.currentDestination?.id
-            if (dest != null && dest in authDestinations) {
-                controller.navigate(R.id.action_global_feedFragment)
-            }
+        // Pick the start destination based on auth state instead of always starting on
+        // welcomeFragment. This:
+        //  - removes the brief welcome flash for already-signed-in users on cold start, and
+        //  - prevents the NavController "Ignoring popBackStack to welcomeFragment"
+        //    warnings emitted by BottomNavigationView.setupWithNavController(), which
+        //    always tries to pop back to the graph's start destination on every tab switch.
+        val isSignedIn = isFirebaseConfigured() && try {
+            FirebaseAuth.getInstance().currentUser != null
+        } catch (_: Exception) {
+            false
         }
+        val graph = controller.navInflater.inflate(R.navigation.nav_graph)
+        graph.setStartDestination(
+            if (isSignedIn) R.id.feedFragment else R.id.welcomeFragment
+        )
+        controller.graph = graph
 
         binding.bottomNavigation.setupWithNavController(controller)
 
@@ -55,6 +62,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.feedFragment,
                 R.id.portfolioFragment,
                 R.id.hotStocksFragment,
+                R.id.articlesFragment,
                 R.id.profileFragment
             )
             binding.bottomNavigation.visibility = if (showBottomNav) View.VISIBLE else View.GONE

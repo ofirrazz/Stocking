@@ -37,7 +37,9 @@ class AppContainer(context: Context) {
     val authRepository: AuthRepository by lazy {
         AuthRepository(
             auth = firebaseAuth,
-            firestore = firebaseFirestore
+            firestore = firebaseFirestore,
+            postDao = database.postDao(),
+            articleDao = database.articleDao()
         )
     }
 
@@ -69,18 +71,24 @@ class AppContainer(context: Context) {
         )
     }
 
-    val watchlistRepository: WatchlistRepository by lazy { WatchlistRepository(apiService = apiService) }
+    val watchlistRepository: WatchlistRepository by lazy {
+        WatchlistRepository(
+            apiService = apiService,
+            firestore = firebaseFirestore,
+            auth = firebaseAuth
+        )
+    }
     val stockDetailsRepository: StockDetailsRepository by lazy {
         StockDetailsRepository(
             apiService = apiService,
-            firestore = firebaseFirestore ?: FirebaseFirestore.getInstance(),
+            firestore = firebaseFirestore,
             auth = firebaseAuth
         )
     }
     val portfolioRepository: PortfolioRepository by lazy {
         PortfolioRepository(
-            firestore = FirebaseFirestore.getInstance(),
-            auth = FirebaseAuth.getInstance(),
+            firestore = firebaseFirestore,
+            auth = firebaseAuth,
             watchlistRepository = watchlistRepository
         )
     }

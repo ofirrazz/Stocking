@@ -73,14 +73,24 @@ class FeedRepository(
                     if (isVideo) videoUrl = url else imageUrl = url
                 }
                 val doc = firebaseFirestore.collection("posts").document()
-                val avatarUrl = user.photoUrl?.toString()?.takeIf { it.isNotBlank() }
-                    ?: fetchAuthorAvatarUrlFromFirestore(firebaseFirestore, user.uid)
+                val fallbackName = user.displayName?.takeIf { it.isNotBlank() }
+                    ?: user.email?.substringBefore("@")
+                    ?: "user"
+                val authorUsername = UserFirestoreHelper.resolveUsername(
+                    firebaseFirestore,
+                    user.uid,
+                    fallbackName
+                )
+                val avatarUrl = UserFirestoreHelper.resolvePhotoUrl(
+                    firebaseFirestore,
+                    user.uid,
+                    user.photoUrl?.toString()?.takeIf { it.isNotBlank() }
+                )
                 doc.set(
                     buildPostPayload(
                         doc.id,
                         user.uid,
-                        user.displayName,
-                        user.email,
+                        authorUsername,
                         avatarUrl,
                         content,
                         imageUrl,
@@ -144,11 +154,19 @@ class FeedRepository(
                     imageUrl = ref.downloadUrl.await().toString()
                 }
 
-                val freshAvatarUrl = user.photoUrl?.toString()?.takeIf { it.isNotBlank() }
-                    ?: fetchAuthorAvatarUrlFromFirestore(firebaseFirestore, user.uid)
-                val freshAuthorUsername = user.displayName?.takeIf { it.isNotBlank() }
+                val fallbackName = user.displayName?.takeIf { it.isNotBlank() }
                     ?: user.email?.substringBefore("@")
                     ?: "user"
+                val freshAuthorUsername = UserFirestoreHelper.resolveUsername(
+                    firebaseFirestore,
+                    user.uid,
+                    fallbackName
+                )
+                val freshAvatarUrl = UserFirestoreHelper.resolvePhotoUrl(
+                    firebaseFirestore,
+                    user.uid,
+                    user.photoUrl?.toString()?.takeIf { it.isNotBlank() }
+                )
                 postRef.update(
                     mapOf(
                         "content" to content.trim(),
@@ -190,7 +208,7 @@ class FeedRepository(
     private suspend fun fetchRemoteEntities(firebaseFirestore: FirebaseFirestore): List<CachedPostEntity> {
         val snapshot = firebaseFirestore.collection("posts")
             .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(50)
+            .limit(FEED_PAGE_SIZE)
             .get()
             .await()
 
@@ -269,14 +287,12 @@ class FeedRepository(
     private fun buildPostPayload(
         postId: String,
         authorId: String,
-        displayName: String?,
-        email: String?,
+        authorUsername: String,
         authorPhotoUrl: String?,
         content: String,
         imageUrl: String?,
         videoUrl: String?
     ): HashMap<String, Any?> {
-        val authorUsername = displayName ?: email?.substringBefore("@") ?: "user"
         val normalizedContent = content.trim()
         val extractedSymbol = extractTickerSymbol(normalizedContent)
         return hashMapOf(
@@ -294,16 +310,6 @@ class FeedRepository(
             "stockSymbol" to extractedSymbol,
             "stockPrice" to null
         )
-    }
-
-    private suspend fun fetchAuthorAvatarUrlFromFirestore(
-        firestore: FirebaseFirestore,
-        uid: String
-    ): String? = try {
-        val userDoc = firestore.collection("users").document(uid).get().await()
-        userDoc.getString("photoUrl")?.takeIf { it.isNotBlank() }
-    } catch (_: Exception) {
-        null
     }
 
     private fun mediaExtensionForMime(mime: String, isVideo: Boolean): String {
@@ -324,10 +330,8 @@ class FeedRepository(
         }
     }
 
-    private fun extractTickerSymbol(content: String): String? {
-        val regex = Regex("""\$(\p{Alpha}{1,6})\b""")
-        return regex.find(content)?.groupValues?.getOrNull(1)?.uppercase()
-    }
+    private fun extractTickerSymbol(content: String): String? =
+        com.stocksocial.utils.TickerParser.extractTickerSymbol(content)
 
     suspend fun getComments(postId: String): RepositoryResult<List<PostComment>> = withContext(Dispatchers.IO) {
         val firebaseFirestore = firestore
@@ -338,7 +342,7 @@ class FeedRepository(
                 .document(postId)
                 .collection("comments")
                 .orderBy("createdAt", Query.Direction.ASCENDING)
-                .limit(100)
+                .limit(COMMENTS_PAGE_SIZE)
                 .get()
                 .await()
             val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -369,7 +373,8 @@ class FeedRepository(
         try {
             val postRef = firebaseFirestore.collection("posts").document(postId)
             val commentRef = postRef.collection("comments").document()
-            val username = user.displayName ?: user.email?.substringBefore("@") ?: "user"
+            val fallbackName = user.displayName ?: user.email?.substringBefore("@") ?: "user"
+            val username = UserFirestoreHelper.resolveUsername(firebaseFirestore, user.uid, fallbackName)
             val batch = firebaseFirestore.batch()
             batch.set(
                 commentRef,
@@ -396,5 +401,11 @@ class FeedRepository(
     companion object {
         private const val FIREBASE_NOT_CONFIGURED_MESSAGE =
             "Firebase is not configured on this build. Add app/google-services.json to enable feed actions."
+
+        /** Page size for the main feed query. */
+        const val FEED_PAGE_SIZE = 50L
+
+        /** Max number of comments returned by [getComments] per request. */
+        const val COMMENTS_PAGE_SIZE = 100L
     }
 }

@@ -113,7 +113,7 @@
                                 android:id="@+id/fullNameText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/profile_full_name"
+                                android:text="@string/profile_loading_name"
                                 android:textColor="@color/text_primary"
                                 android:textSize="20sp"
                                 android:textStyle="bold" />
@@ -123,7 +123,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/profile_username"
+                                android:text="@string/profile_loading_username"
                                 android:textColor="@color/primary_gold"
                                 android:textSize="14sp" />
                         </LinearLayout>
@@ -135,7 +135,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:lineSpacingExtra="4dp"
-                        android:text="@string/profile_bio"
+                        android:text=""
                         android:textColor="@color/text_muted"
                         android:textSize="14sp" />
 

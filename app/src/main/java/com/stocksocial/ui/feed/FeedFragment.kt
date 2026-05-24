@@ -47,7 +47,7 @@ class FeedFragment : Fragment() {
             val direction = FeedFragmentDirections.actionFeedFragmentToPostDetailsFragment(post.id)
             findNavController().navigate(direction)
         },
-        onLikeClick = { post -> profileViewModel.likePost(post.id) },
+        onLikeClick = { post -> profileViewModel.toggleLikePost(post.id) },
         onCommentClick = { post -> openCommentsSheet(post.id) },
         onEditClick = { post ->
             val direction = FeedFragmentDirections.actionFeedFragmentToPostDetailsFragment(post.id)
@@ -140,15 +140,11 @@ class FeedFragment : Fragment() {
 
         profileViewModel.likePostStateLive.observe(viewLifecycleOwner) { state ->
             if (!state.errorMessage.isNullOrBlank()) {
-                val msg = if (state.errorMessage == ProfileRepository.MESSAGE_ALREADY_LIKED) {
-                    getString(R.string.already_liked_post)
-                } else {
-                    state.errorMessage
+                if (state.errorMessage != ProfileRepository.MESSAGE_ALREADY_LIKED) {
+                    Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 profileViewModel.consumeLikePostState()
             } else if (state.data != null) {
-                Toast.makeText(requireContext(), R.string.post_liked, Toast.LENGTH_SHORT).show()
                 profileViewModel.consumeLikePostState()
                 viewModel.loadFeed()
             }
@@ -304,11 +300,6 @@ class FeedFragment : Fragment() {
         if (!post.videoUrl.isNullOrBlank()) {
             append("\nVideo: ${post.videoUrl}")
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.loadFeed()
     }
 
     override fun onDestroyView() {

@@ -12,7 +12,20 @@
           "package_name": "com.stocksocial"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "654488883410-7knef42vvo2i1s4biurb5hvr0fdho946.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.stocksocial",
+            "certificate_hash": "ba0420326673bb70898176fbdf5deb9086834632"
+          }
+        },
+        {
+          "client_id": "654488883410-flujfgljk4nc1mk5nvlii9qqmfkn3oi8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAgV9IxCwChkEx0nS7SgVUSUtqfPhidjBI"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "654488883410-flujfgljk4nc1mk5nvlii9qqmfkn3oi8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

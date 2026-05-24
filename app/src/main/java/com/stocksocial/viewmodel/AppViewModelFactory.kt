@@ -39,9 +39,6 @@ class AppViewModelFactory(
             modelClass.isAssignableFrom(StocksViewModel::class.java) -> {
                 StocksViewModel(watchlistRepository, profileRepository, recentHotSearchStore)
             }
-            modelClass.isAssignableFrom(WatchlistViewModel::class.java) -> {
-                WatchlistViewModel(watchlistRepository)
-            }
             modelClass.isAssignableFrom(StockDetailsViewModel::class.java) -> {
                 StockDetailsViewModel(stockDetailsRepository, profileRepository)
             }

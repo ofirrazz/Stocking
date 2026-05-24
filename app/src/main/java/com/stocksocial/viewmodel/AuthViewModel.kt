@@ -20,6 +20,9 @@ class AuthViewModel(
     val authState: StateFlow<UiState<AuthUiModel>> = _authState.asStateFlow()
     val authStateLive: LiveData<UiState<AuthUiModel>> = _authState.asLiveData()
 
+    private val _resetPasswordState = MutableStateFlow(UiState<Unit>())
+    val resetPasswordStateLive: LiveData<UiState<Unit>> = _resetPasswordState.asLiveData()
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _authState.value = UiState(isLoading = true)
@@ -78,10 +81,38 @@ class AuthViewModel(
     }
 
     fun logout() {
-        authRepository.logout()
-        _authState.value = UiState(
-            data = AuthUiModel(isAuthenticated = false, user = null)
-        )
+        viewModelScope.launch {
+            authRepository.logout()
+            _authState.value = UiState(
+                data = AuthUiModel(isAuthenticated = false, user = null)
+            )
+        }
+    }
+
+    fun sendPasswordReset(email: String) {
+        viewModelScope.launch {
+            _resetPasswordState.value = UiState(isLoading = true)
+            when (val result = authRepository.sendPasswordReset(email)) {
+                is RepositoryResult.Success -> _resetPasswordState.value = UiState(data = Unit)
+                is RepositoryResult.Error ->
+                    _resetPasswordState.value = UiState(errorMessage = result.message)
+            }
+        }
+    }
+
+    fun consumeResetPasswordState() {
+        _resetPasswordState.value = UiState()
+    }
+
+    /**
+     * Clear any pending error/success so it isn't re-displayed after a configuration change
+     * (e.g. rotation) or when the user re-enters the auth screen.
+     */
+    fun consumeAuthState() {
+        val current = _authState.value
+        if (current.errorMessage != null) {
+            _authState.value = current.copy(errorMessage = null)
+        }
     }
 }
 

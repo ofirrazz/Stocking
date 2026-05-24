@@ -169,7 +169,7 @@ class PortfolioFragment : Fragment() {
                     return@setOnClickListener
                 }
                 val nameFromHit = matched?.description
-                viewModel.addOrUpdateHolding(symbol, buyPrice, nameFromHit)
+                viewModel.addOrUpdateHolding(symbol, buyPrice, displayName = nameFromHit)
             }
         }
 

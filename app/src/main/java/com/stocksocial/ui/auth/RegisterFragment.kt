@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,6 +16,7 @@ import com.stocksocial.R
 import com.stocksocial.databinding.FragmentRegisterBinding
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.utils.buildGoogleSignInClient
+import com.stocksocial.utils.googleSignInErrorMessage
 import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.AuthViewModel
 
@@ -37,8 +39,8 @@ class RegisterFragment : Fragment() {
         } catch (e: ApiException) {
             Toast.makeText(
                 requireContext(),
-                getString(R.string.google_signin_failed, e.message ?: e.statusCode.toString()),
-                Toast.LENGTH_SHORT
+                googleSignInErrorMessage(requireContext(), e),
+                Toast.LENGTH_LONG
             ).show()
         }
     }
@@ -58,12 +60,29 @@ class RegisterFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.usernameInput.focusAndShowKeyboard()
 
+        binding.backButton.setOnClickListener { navigateBackToWelcome() }
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() = navigateBackToWelcome()
+            }
+        )
+
+        binding.goToLoginText.setOnClickListener {
+            if (!findNavController().popBackStack(R.id.loginFragment, false)) {
+                findNavController().navigate(
+                    RegisterFragmentDirections.actionRegisterFragmentToLoginFragment()
+                )
+            }
+        }
+
         viewModel.authStateLive.observe(viewLifecycleOwner) { state ->
             binding.registerButton.isEnabled = !state.isLoading
             binding.googleRegisterButton.isEnabled = !state.isLoading
             binding.registerProgress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
             state.errorMessage?.let { msg ->
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+                viewModel.consumeAuthState()
             }
             if (state.data?.isAuthenticated == true &&
                 findNavController().currentDestination?.id == R.id.registerFragment
@@ -77,9 +96,18 @@ class RegisterFragment : Fragment() {
             val username = binding.usernameInput.text?.toString()?.trim().orEmpty()
             val email = binding.emailInput.text?.toString()?.trim().orEmpty()
             val password = binding.passwordInput.text?.toString().orEmpty()
+            val confirmPassword = binding.confirmPasswordInput.text?.toString().orEmpty()
 
-            if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+            if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
                 Toast.makeText(requireContext(), R.string.fill_register_fields, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (password.length < 6) {
+                Toast.makeText(requireContext(), R.string.password_too_short, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (password != confirmPassword) {
+                Toast.makeText(requireContext(), R.string.passwords_do_not_match, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             viewModel.register(username, email, password)
@@ -91,6 +119,12 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
             googleSignInLauncher.launch(client.signInIntent)
+        }
+    }
+
+    private fun navigateBackToWelcome() {
+        if (!findNavController().popBackStack(R.id.welcomeFragment, false)) {
+            findNavController().navigate(R.id.welcomeFragment)
         }
     }
 

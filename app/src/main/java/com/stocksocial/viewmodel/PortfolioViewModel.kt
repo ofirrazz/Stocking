@@ -64,10 +64,28 @@ class PortfolioViewModel(
         }
     }
 
-    fun addOrUpdateHolding(symbol: String, buyPrice: Double, displayName: String? = null) {
+    fun addOrUpdateHolding(
+        symbol: String,
+        buyPrice: Double,
+        shares: Double = 1.0,
+        displayName: String? = null
+    ) {
         viewModelScope.launch {
             _upsertState.value = UiState(isLoading = true)
-            when (val result = portfolioRepository.upsertHolding(symbol, buyPrice, displayName)) {
+            when (val result = portfolioRepository.upsertHolding(symbol, buyPrice, shares, displayName)) {
+                is RepositoryResult.Success -> {
+                    _upsertState.value = UiState(data = Unit)
+                    loadHoldings()
+                }
+                is RepositoryResult.Error -> _upsertState.value = UiState(errorMessage = result.message)
+            }
+        }
+    }
+
+    fun deleteHolding(symbol: String) {
+        viewModelScope.launch {
+            _upsertState.value = UiState(isLoading = true)
+            when (val result = portfolioRepository.deleteHolding(symbol)) {
                 is RepositoryResult.Success -> {
                     _upsertState.value = UiState(data = Unit)
                     loadHoldings()

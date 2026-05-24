@@ -75,15 +75,6 @@
     </fragment>
 
     <fragment
-        android:id="@+id/stocksFragment"
-        android:name="com.stocksocial.ui.stocks.StocksFragment"
-        android:label="@string/stocks">
-        <action
-            android:id="@+id/action_stocksFragment_to_stockDetailsFragment"
-            app:destination="@id/stockDetailsFragment" />
-    </fragment>
-
-    <fragment
         android:id="@+id/articlesFragment"
         android:name="com.stocksocial.ui.articles.ArticlesFragment"
         android:label="@string/articles">
