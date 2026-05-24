@@ -70,6 +70,8 @@ class PortfolioFragment : Fragment() {
         }
 
         viewModel.holdingsStateLive.observe(viewLifecycleOwner) { state ->
+            binding.loadingProgress.visibility =
+                if (state.isLoading && state.data.isNullOrEmpty()) View.VISIBLE else View.GONE
             val list = state.data.orEmpty()
             adapter.submitList(list)
             val invested = list.sumOf { it.investedValue }

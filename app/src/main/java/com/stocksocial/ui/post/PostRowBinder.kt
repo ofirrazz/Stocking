@@ -52,7 +52,7 @@ object PostRowBinder {
         if (!avatar.isNullOrBlank()) {
             Glide.with(binding.profileImage).load(avatar).circleCrop().into(binding.profileImage)
         } else {
-            binding.profileImage.setImageResource(android.R.drawable.ic_menu_myplaces)
+            binding.profileImage.setImageResource(R.drawable.ic_nav_profile)
         }
 
         val hasVideo = !item.videoUrl.isNullOrBlank()

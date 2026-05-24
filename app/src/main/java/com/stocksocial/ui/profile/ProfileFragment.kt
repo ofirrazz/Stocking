@@ -147,7 +147,7 @@ class ProfileFragment : Fragment() {
                         .placeholder(R.drawable.bg_profile_circle)
                         .into(binding.profileImage)
                 } else {
-                    binding.profileImage.setImageResource(android.R.drawable.ic_menu_myplaces)
+                    binding.profileImage.setImageResource(R.drawable.ic_nav_profile)
                 }
             }
         }
@@ -253,9 +253,9 @@ class ProfileFragment : Fragment() {
                     .placeholder(R.drawable.bg_profile_circle)
                     .into(avatar)
             } else {
-                avatar.setImageResource(android.R.drawable.ic_menu_myplaces)
+                avatar.setImageResource(R.drawable.ic_nav_profile)
             }
-        } ?: avatar.setImageResource(android.R.drawable.ic_menu_myplaces)
+        } ?: avatar.setImageResource(R.drawable.ic_nav_profile)
 
         val nameInput = dialogView.findViewById<TextInputEditText>(R.id.editDisplayNameInput)
         nameInput.setText(binding.fullNameText.text?.toString().orEmpty())

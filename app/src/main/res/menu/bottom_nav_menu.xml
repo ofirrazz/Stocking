@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/feedFragment"
-        android:icon="@android:drawable/ic_menu_view"
+        android:icon="@drawable/ic_nav_home"
         android:title="@string/feed" />
     <item
         android:id="@+id/portfolioFragment"
-        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:icon="@drawable/ic_nav_portfolio"
         android:title="@string/nav_portfolio" />
     <item
         android:id="@+id/hotStocksFragment"
@@ -14,6 +14,6 @@
         android:title="@string/nav_hot_stocks" />
     <item
         android:id="@+id/profileFragment"
-        android:icon="@android:drawable/ic_menu_myplaces"
+        android:icon="@drawable/ic_nav_profile"
         android:title="@string/profile" />
 </menu>

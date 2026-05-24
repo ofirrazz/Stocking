@@ -69,6 +69,7 @@ class StockDetailsFragment : Fragment() {
         binding.toolbarNameText.text = StockDetailsRepositorySymbolNames.nameFor(sym)
 
         viewModel.quoteStateLive.observe(viewLifecycleOwner) { state ->
+            updateLoadingSpinner()
             state.data?.let { stock ->
                 bindQuote(stock)
                 bindDerived(stock, viewModel.recommendationsStateLive.value?.data?.firstOrNull())
@@ -79,6 +80,7 @@ class StockDetailsFragment : Fragment() {
         }
 
         viewModel.recommendationsStateLive.observe(viewLifecycleOwner) { state ->
+            updateLoadingSpinner()
             val latest = state.data?.firstOrNull()
             binding.recommendationsText.text = formatRecommendations(latest)
             viewModel.quoteStateLive.value?.data?.let { stock ->
@@ -87,10 +89,12 @@ class StockDetailsFragment : Fragment() {
         }
 
         viewModel.postsStateLive.observe(viewLifecycleOwner) { state ->
+            updateLoadingSpinner()
             postsAdapter.submitList(state.data.orEmpty())
         }
 
         viewModel.chartStateLive.observe(viewLifecycleOwner) { state ->
+            updateLoadingSpinner()
             val series = state.data ?: PriceChartSeries()
             binding.priceChart.setTimedPoints(series.points)
         }
@@ -98,13 +102,13 @@ class StockDetailsFragment : Fragment() {
         viewModel.favoriteStateLive.observe(viewLifecycleOwner) { fav ->
             when (fav) {
                 true -> {
-                    binding.favoriteButton.setIconResource(android.R.drawable.star_big_on)
+                    binding.favoriteButton.setIconResource(R.drawable.ic_star_filled)
                     binding.favoriteButton.iconTint = ColorStateList.valueOf(
                         ContextCompat.getColor(requireContext(), R.color.primary_gold)
                     )
                 }
                 false -> {
-                    binding.favoriteButton.setIconResource(android.R.drawable.star_big_off)
+                    binding.favoriteButton.setIconResource(R.drawable.ic_star_outline)
                     binding.favoriteButton.iconTint = ColorStateList.valueOf(
                         ContextCompat.getColor(requireContext(), R.color.text_primary)
                     )
@@ -120,6 +124,14 @@ class StockDetailsFragment : Fragment() {
         }
 
         viewModel.load(args.symbol)
+    }
+
+    private fun updateLoadingSpinner() {
+        val anyLoading = viewModel.quoteStateLive.value?.isLoading == true ||
+            viewModel.recommendationsStateLive.value?.isLoading == true ||
+            viewModel.postsStateLive.value?.isLoading == true ||
+            viewModel.chartStateLive.value?.isLoading == true
+        binding.loadingProgress.visibility = if (anyLoading) View.VISIBLE else View.GONE
     }
 
     private fun bindQuote(stock: Stock) {

@@ -9,7 +9,7 @@
         <item name="boxStrokeColor">@color/feed_card_stroke</item>
         <item name="hintTextColor">@color/feed_text_muted</item>
         <item name="endIconMode">custom</item>
-        <item name="endIconDrawable">@android:drawable/ic_menu_search</item>
+        <item name="endIconDrawable">@drawable/ic_search</item>
     </style>
 
     <style name="Widget.StockSocial.SearchInput" parent="Widget.Material3.TextInputEditText.FilledBox">

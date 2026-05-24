@@ -116,8 +116,9 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="@drawable/chip_feed_unselected"
+                    android:contentDescription="@null"
                     android:padding="8dp"
-                    android:src="@android:drawable/stat_sys_upload"
+                    android:src="@drawable/ic_welcome_analytics"
                     app:tint="@color/primary_gold" />
 
                 <LinearLayout
@@ -167,8 +168,9 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="@drawable/chip_feed_unselected"
+                    android:contentDescription="@null"
                     android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_myplaces"
+                    android:src="@drawable/ic_welcome_community"
                     app:tint="@color/primary_gold" />
 
                 <LinearLayout
@@ -218,8 +220,9 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="@drawable/chip_feed_unselected"
+                    android:contentDescription="@null"
                     android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_sort_by_size"
+                    android:src="@drawable/ic_nav_portfolio"
                     app:tint="@color/primary_gold" />
 
                 <LinearLayout

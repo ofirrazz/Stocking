@@ -37,7 +37,7 @@
             android:contentDescription="@string/pick_profile_photo"
             android:padding="12dp"
             android:scaleType="centerCrop"
-            android:src="@android:drawable/ic_menu_myplaces"
+            android:src="@drawable/ic_nav_profile"
             app:tint="@color/text_primary" />
     </FrameLayout>
 
