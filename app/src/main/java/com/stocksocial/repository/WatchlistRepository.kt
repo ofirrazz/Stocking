@@ -1,6 +1,7 @@
 package com.stocksocial.repository
 
 import com.stocksocial.BuildConfig
+import com.stocksocial.model.FeedHotStockCategory
 import com.stocksocial.model.Stock
 import com.stocksocial.model.SymbolSearchHit
 import com.stocksocial.network.currentDisplayPrice
@@ -73,6 +74,39 @@ class WatchlistRepository(
                 RepositoryResult.Error(e.message ?: "Failed to load stocks", e)
             }
         }
+
+    /**
+     * One round-trip batch of parallel quote calls for [symbols] (deduped). Prefer this over many
+     * [getStocksForSymbols] calls to avoid duplicate Finnhub requests and rate-limit slowdowns.
+     */
+    suspend fun getQuotesMap(symbols: List<String>): RepositoryResult<Map<String, Stock>> =
+        withContext(Dispatchers.IO) {
+            if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
+                return@withContext RepositoryResult.Error("Add FINNHUB_TOKEN in local.properties (see README).")
+            }
+            val normalized = symbols.map { it.trim().uppercase() }.filter { it.isNotEmpty() }.distinct()
+            if (normalized.isEmpty()) {
+                return@withContext RepositoryResult.Success(emptyMap())
+            }
+            try {
+                val list = fetchStocks(normalized)
+                RepositoryResult.Success(list.associateBy { it.symbol.uppercase() })
+            } catch (e: Exception) {
+                RepositoryResult.Error(e.message ?: "Failed to load quotes", e)
+            }
+        }
+
+    /** All dashboard symbols (market + trending + watchlist + hot categories + user lists), deduped. */
+    fun dashboardQuoteSymbolUnion(recentSymbols: List<String>, favoriteSymbols: List<String>): List<String> {
+        val base = MARKET_SYMBOLS + TRENDING_SYMBOLS + WATCHLIST_SYMBOLS +
+            FeedHotStockCategory.technology + FeedHotStockCategory.banking + FeedHotStockCategory.crypto +
+            recentSymbols + favoriteSymbols
+        return base.map { it.trim().uppercase() }.filter { it.isNotEmpty() }.distinct()
+    }
+
+    /** Symbols refreshed periodically (market strip + trending + sample watchlist). */
+    fun coreRefreshSymbolUnion(): List<String> =
+        (MARKET_SYMBOLS + TRENDING_SYMBOLS + WATCHLIST_SYMBOLS).distinct()
 
     suspend fun searchSymbols(query: String): RepositoryResult<List<SymbolSearchHit>> = withContext(Dispatchers.IO) {
         if (BuildConfig.FINNHUB_TOKEN.isBlank()) {
@@ -150,7 +184,8 @@ class WatchlistRepository(
     }
 
     private suspend fun fetchStocks(symbols: List<String>): List<Stock> = coroutineScope {
-        symbols.map { symbol ->
+        val distinct = symbols.map { it.trim().uppercase() }.filter { it.isNotEmpty() }.distinct()
+        distinct.map { symbol ->
             async {
                 val response = apiService.getQuote(symbol = symbol)
                 val body = response.body()
@@ -190,9 +225,9 @@ class WatchlistRepository(
     }
 
     companion object {
-        private val MARKET_SYMBOLS = listOf("SPY", "DIA", "QQQ")
-        private val TRENDING_SYMBOLS = listOf("NVDA", "AAPL", "TSLA", "MSFT", "GOOGL", "AMD")
-        private val WATCHLIST_SYMBOLS = listOf("AAPL", "NVDA", "MSFT", "TSLA")
+        val MARKET_SYMBOLS = listOf("SPY", "DIA", "QQQ")
+        val TRENDING_SYMBOLS = listOf("NVDA", "AAPL", "TSLA", "MSFT", "GOOGL", "AMD")
+        val WATCHLIST_SYMBOLS = listOf("AAPL", "NVDA", "MSFT", "TSLA")
 
         private val SYMBOL_NAMES = mapOf(
             "SPY" to "S&P 500 ETF",

@@ -9,9 +9,9 @@
         android:icon="@android:drawable/ic_menu_sort_by_size"
         android:title="@string/nav_portfolio" />
     <item
-        android:id="@+id/notificationsFragment"
-        android:icon="@android:drawable/ic_lock_idle_alarm"
-        android:title="@string/nav_alerts" />
+        android:id="@+id/hotStocksFragment"
+        android:icon="@drawable/ic_trend_up"
+        android:title="@string/nav_hot_stocks" />
     <item
         android:id="@+id/profileFragment"
         android:icon="@android:drawable/ic_menu_myplaces"

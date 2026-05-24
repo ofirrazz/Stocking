@@ -13,13 +13,15 @@ class StockSocialApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        if (FirebaseApp.getApps(this).isEmpty()) {
-            Log.e(TAG, "Firebase is not configured. Add app/google-services.json from the Firebase console.")
+        if (!isFirebaseConfigured()) {
+            Log.w(TAG, "Firebase is not configured. Add app/google-services.json from the Firebase console.")
             return
         }
         configureFirestorePersistence()
         hookFirebase()
     }
+
+    private fun isFirebaseConfigured(): Boolean = FirebaseApp.getApps(this).isNotEmpty()
 
     private fun configureFirestorePersistence() {
         try {
@@ -34,6 +36,10 @@ class StockSocialApp : Application() {
     }
 
     private fun hookFirebase() {
+        if (!isFirebaseConfigured()) {
+            Log.e(TAG, "Firebase is not configured. Add app/google-services.json from the Firebase console.")
+            return
+        }
         val projectId = FirebaseApp.getInstance().options.projectId
         Log.d(TAG, "Firebase initialized (projectId=$projectId)")
 

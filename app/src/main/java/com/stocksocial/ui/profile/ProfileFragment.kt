@@ -1,30 +1,33 @@
 package com.stocksocial.ui.profile
 
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.graphics.drawable.ColorDrawable
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.appcompat.app.AlertDialog
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.stocksocial.NavGraphDirections
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.FirebaseAuth
+import com.google.android.material.textfield.TextInputEditText
+import com.stocksocial.NavGraphDirections
 import com.stocksocial.R
 import com.stocksocial.databinding.FragmentProfileBinding
-import com.stocksocial.ui.adapters.UserSearchAdapter
+import com.stocksocial.model.Post
+import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.ui.adapters.UserPostsAdapter
+import com.stocksocial.ui.post.CommentsBottomSheet
 import com.stocksocial.utils.appViewModelFactory
 import com.stocksocial.utils.focusAndShowKeyboard
 import com.stocksocial.viewmodel.AuthViewModel
@@ -39,16 +42,17 @@ class ProfileFragment : Fragment() {
     private val authViewModel: AuthViewModel by viewModels { appViewModelFactory }
     private val userPostsAdapter by lazy {
         UserPostsAdapter(
+            onPostClick = { post ->
+                val direction = ProfileFragmentDirections.actionProfileFragmentToPostDetailsFragment(post.id)
+                findNavController().navigate(direction)
+            },
+            onLikeClick = { post -> profileViewModel.likePost(post.id) },
+            onCommentClick = { post -> openCommentsSheet(post.id) },
             onEditClick = { post ->
                 val direction = ProfileFragmentDirections.actionProfileFragmentToPostDetailsFragment(post.id)
                 findNavController().navigate(direction)
             },
-            onLikeClick = { post ->
-                profileViewModel.likePost(post.id)
-            },
-            onShareClick = { post ->
-                sharePost(post)
-            },
+            onShareClick = { post -> showSharePostDialog(post) },
             onStockClick = { symbol ->
                 val direction = ProfileFragmentDirections.actionProfileFragmentToStockDetailsFragment(symbol)
                 findNavController().navigate(direction)
@@ -60,16 +64,21 @@ class ProfileFragment : Fragment() {
     private var isPostsLoading = false
     private var isProfileUpdating = false
 
-    private val pickProfileImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            profileViewModel.updateProfile(newName = null, newImageUri = uri)
-        }
-    }
+    private var editProfileAvatarView: ImageView? = null
+    private var pendingEditImageUri: Uri? = null
 
-    private val pickVideoToShare = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            shareVideoUri(uri)
+    private val pickEditProfileImage =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            pendingEditImageUri = uri
+            uri?.let { u ->
+                editProfileAvatarView?.let { iv ->
+                    Glide.with(this).load(u).circleCrop().into(iv)
+                }
+            }
         }
+
+    private val pickPhotoOrVideo = registerForActivityResult(PickVisualMedia()) { uri: Uri? ->
+        uri?.let { showMediaPostDialog(it) }
     }
 
     private var _binding: FragmentProfileBinding? = null
@@ -91,27 +100,30 @@ class ProfileFragment : Fragment() {
             androidx.recyclerview.widget.LinearLayoutManager(requireContext())
         binding.userPostsRecyclerView.adapter = userPostsAdapter
 
+        setFragmentResultListener(CommentsBottomSheet.REQUEST_KEY) { _, bundle ->
+            if (bundle.getBoolean(CommentsBottomSheet.EXTRA_UPDATED)) {
+                profileViewModel.loadMyPosts()
+            }
+        }
+
         binding.logoutButton.setOnClickListener {
             authViewModel.logout()
             val direction = NavGraphDirections.actionGlobalLoginFragment()
             findNavController().navigate(direction)
         }
 
+        binding.editProfileButton.setOnClickListener { showEditProfileDialog() }
+
         binding.writePostButton.setOnClickListener {
             val direction = ProfileFragmentDirections.actionProfileFragmentToCreatePostFragment()
             findNavController().navigate(direction)
         }
         binding.shareStockButton.setOnClickListener { showShareStockDialog() }
-        binding.uploadVideoButton.setOnClickListener { pickVideoToShare.launch("video/*") }
-        binding.followUserButton.setOnClickListener { showFollowUserDialog() }
-        binding.openPortfolioButton.setOnClickListener {
-            val direction = ProfileFragmentDirections.actionProfileFragmentToPortfolioFragment()
-            findNavController().navigate(direction)
+        binding.uploadMediaButton.setOnClickListener {
+            pickPhotoOrVideo.launch(
+                PickVisualMediaRequest(PickVisualMedia.ImageAndVideo)
+            )
         }
-
-        binding.fullNameText.setOnClickListener { showEditNameDialog() }
-        binding.profileImage.setOnClickListener { pickProfileImage.launch("image/*") }
-        binding.uploadImageButton.setOnClickListener { pickProfileImage.launch("image/*") }
 
         profileViewModel.profileStateLive.observe(viewLifecycleOwner) { state ->
             isProfileLoading = state.isLoading
@@ -148,7 +160,10 @@ class ProfileFragment : Fragment() {
                 lastShownError = error
                 Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
             }
-            state.data?.let { posts -> userPostsAdapter.submitList(posts) }
+            state.data?.let { posts ->
+                userPostsAdapter.currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                userPostsAdapter.submitList(posts)
+            }
         }
 
         profileViewModel.profileUpdateStateLive.observe(viewLifecycleOwner) { state ->
@@ -164,25 +179,20 @@ class ProfileFragment : Fragment() {
             }
         }
 
-        profileViewModel.followStateLive.observe(viewLifecycleOwner) { state ->
-            if (!state.errorMessage.isNullOrBlank()) {
-                Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
-                profileViewModel.consumeFollowState()
-            } else if (state.data != null) {
-                Toast.makeText(requireContext(), R.string.follow_success, Toast.LENGTH_SHORT).show()
-                profileViewModel.consumeFollowState()
-                profileViewModel.loadProfile()
-            }
-        }
-
         profileViewModel.likePostStateLive.observe(viewLifecycleOwner) { state ->
             if (!state.errorMessage.isNullOrBlank()) {
-                Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_SHORT).show()
+                val msg = if (state.errorMessage == ProfileRepository.MESSAGE_ALREADY_LIKED) {
+                    getString(R.string.already_liked_post)
+                } else {
+                    state.errorMessage
+                }
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 profileViewModel.consumeLikePostState()
             } else if (state.data != null) {
                 Toast.makeText(requireContext(), R.string.post_liked, Toast.LENGTH_SHORT).show()
                 profileViewModel.consumeLikePostState()
                 profileViewModel.loadProfile()
+                profileViewModel.loadMyPosts()
             }
         }
 
@@ -221,89 +231,60 @@ class ProfileFragment : Fragment() {
             if (isProfileLoading || isPostsLoading || isProfileUpdating) View.VISIBLE else View.GONE
     }
 
-    private fun showEditNameDialog() {
-        val input = EditText(requireContext()).apply {
-            setText(binding.fullNameText.text?.toString().orEmpty())
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.edit_profile_name)
-            .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val newName = input.text?.toString()?.trim().orEmpty()
-                if (newName.isNotBlank()) {
-                    profileViewModel.updateProfile(newName = newName, newImageUri = null)
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-            .also { dialog ->
-                dialog.setOnShowListener { input.focusAndShowKeyboard() }
-                dialog.show()
-            }
+    private fun openCommentsSheet(postId: String) {
+        CommentsBottomSheet.newInstance(postId).show(childFragmentManager, "comments")
     }
 
-    private fun showFollowUserDialog() {
+    private fun showEditProfileDialog() {
         val dialog = android.app.Dialog(requireContext())
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        val dialogView = layoutInflater.inflate(R.layout.dialog_people_search, null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_profile, null)
         dialog.setContentView(dialogView)
         dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
 
-        val searchLayout = dialogView.findViewById<TextInputLayout>(R.id.searchInputLayout)
-        val input = dialogView.findViewById<TextInputEditText>(R.id.searchInput)
-        val resultsRecycler = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.searchResultsRecyclerView)
-        val emptyText = dialogView.findViewById<android.widget.TextView>(R.id.emptyResultsText)
-        val followButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.followButton)
-        val cancelButton = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.cancelButton)
-        val adapter = UserSearchAdapter { suggestion ->
-            profileViewModel.followUserByUsername(suggestion.username)
+        val avatar = dialogView.findViewById<ImageView>(R.id.editProfileAvatar)
+        editProfileAvatarView = avatar
+        pendingEditImageUri = null
+
+        profileViewModel.profileStateLive.value?.data?.let { user ->
+            val url = user.avatarUrl
+            if (!url.isNullOrBlank()) {
+                Glide.with(this).load(url).circleCrop()
+                    .placeholder(R.drawable.bg_profile_circle)
+                    .into(avatar)
+            } else {
+                avatar.setImageResource(android.R.drawable.ic_menu_myplaces)
+            }
+        } ?: avatar.setImageResource(android.R.drawable.ic_menu_myplaces)
+
+        val nameInput = dialogView.findViewById<TextInputEditText>(R.id.editDisplayNameInput)
+        nameInput.setText(binding.fullNameText.text?.toString().orEmpty())
+
+        dialogView.findViewById<View>(R.id.editProfilePickPhotoButton).setOnClickListener {
+            pickEditProfileImage.launch("image/*")
+        }
+        dialogView.findViewById<View>(R.id.editProfileCancelButton).setOnClickListener {
             dialog.dismiss()
         }
-        resultsRecycler.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
-        resultsRecycler.adapter = adapter
+        dialogView.findViewById<View>(R.id.editProfileSaveButton).setOnClickListener {
+            val trimmed = nameInput.text?.toString()?.trim().orEmpty()
+            val nameToSend = trimmed.takeIf { it.isNotBlank() }
+            if (nameToSend == null && pendingEditImageUri == null) {
+                Toast.makeText(requireContext(), R.string.edit_profile_no_changes, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            profileViewModel.updateProfile(newName = nameToSend, newImageUri = pendingEditImageUri)
+            dialog.dismiss()
+        }
 
-        searchLayout.hint = getString(R.string.search_people_hint)
-        val performFollow = {
-            val username = input.text?.toString()?.trim().orEmpty()
-            if (username.isNotBlank()) {
-                profileViewModel.followUserByUsername(username)
-                dialog.dismiss()
-            }
+        dialog.setOnDismissListener {
+            editProfileAvatarView = null
+            pendingEditImageUri = null
         }
-        val watcher = object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            override fun afterTextChanged(s: Editable?) {
-                profileViewModel.searchUsersByPrefix(s?.toString().orEmpty())
-            }
-        }
-        input.addTextChangedListener(watcher)
-        profileViewModel.userSearchStateLive.removeObservers(viewLifecycleOwner)
-        profileViewModel.userSearchStateLive.observe(viewLifecycleOwner) { state ->
-            val data = state.data.orEmpty()
-            adapter.submitList(data)
-            emptyText.visibility = if (!state.isLoading && data.isEmpty() && input.text?.isNotBlank() == true) View.VISIBLE else View.GONE
-        }
-        searchLayout.setEndIconOnClickListener { performFollow() }
-        input.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                performFollow()
-                true
-            } else {
-                false
-            }
-        }
-        followButton.setOnClickListener { performFollow() }
-        cancelButton.setOnClickListener { dialog.dismiss() }
         dialog.setOnShowListener {
             val width = (resources.displayMetrics.widthPixels * 0.94f).toInt()
             dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
-            input.focusAndShowKeyboard()
-        }
-        dialog.setOnDismissListener {
-            input.removeTextChangedListener(watcher)
-            profileViewModel.userSearchStateLive.removeObservers(viewLifecycleOwner)
-            profileViewModel.clearUserSearch()
+            nameInput.focusAndShowKeyboard()
         }
         dialog.show()
     }
@@ -323,35 +304,69 @@ class ProfileFragment : Fragment() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .create()
-            .also { dialog ->
-                dialog.setOnShowListener { input.focusAndShowKeyboard() }
-                dialog.show()
+            .also { d ->
+                d.setOnShowListener { input.focusAndShowKeyboard() }
+                d.show()
             }
     }
 
-    private fun shareVideoUri(uri: Uri) {
-        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-            type = "video/*"
-            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    private fun showMediaPostDialog(mediaUri: Uri) {
+        val dialog = android.app.Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_media_post, null)
+        dialog.setContentView(dialogView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+        val captionInput = dialogView.findViewById<TextInputEditText>(R.id.mediaPostCaptionInput)
+        dialogView.findViewById<View>(R.id.mediaPostCancelButton).setOnClickListener { dialog.dismiss() }
+        dialogView.findViewById<View>(R.id.mediaPostPublishButton).setOnClickListener {
+            val caption = captionInput.text?.toString()?.trim().orEmpty()
+            feedViewModel.publishPost(caption, mediaUri)
+            dialog.dismiss()
         }
-        startActivity(android.content.Intent.createChooser(shareIntent, getString(R.string.upload_video)))
+        dialog.setOnShowListener {
+            val width = (resources.displayMetrics.widthPixels * 0.94f).toInt()
+            dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+            captionInput.focusAndShowKeyboard()
+        }
+        dialog.show()
     }
 
-    private fun sharePost(post: com.stocksocial.model.Post) {
-        val postText = buildString {
-            append("Shared from @${post.author.username}:\n")
-            append(post.content)
-            if (!post.stockSymbol.isNullOrBlank()) {
-                append("\n\nTicker: ${post.stockSymbol}")
-            }
-            if (!post.imageUrl.isNullOrBlank()) {
-                append("\nImage: ${post.imageUrl}")
-            }
-            if (!post.videoUrl.isNullOrBlank()) {
-                append("\nVideo: ${post.videoUrl}")
-            }
+    private fun showSharePostDialog(post: Post) {
+        val dialog = android.app.Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_share_post, null)
+        dialog.setContentView(dialogView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+        val captionInput = dialogView.findViewById<TextInputEditText>(R.id.sharePostCaptionInput)
+        dialogView.findViewById<View>(R.id.sharePostCancelButton).setOnClickListener { dialog.dismiss() }
+        dialogView.findViewById<View>(R.id.sharePostPublishButton).setOnClickListener {
+            val userMsg = captionInput.text?.toString()?.trim().orEmpty()
+            val body = buildShareQuotedBody(post)
+            val finalText = if (userMsg.isNotEmpty()) "$userMsg\n\n$body" else body
+            feedViewModel.publishPost(finalText, null)
+            dialog.dismiss()
         }
-        feedViewModel.publishPost(postText, null)
+        dialog.setOnShowListener {
+            val width = (resources.displayMetrics.widthPixels * 0.94f).toInt()
+            dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+            captionInput.focusAndShowKeyboard()
+        }
+        dialog.show()
+    }
+
+    private fun buildShareQuotedBody(post: Post): String = buildString {
+        append("Shared from @${post.author.username}:\n")
+        append(post.content)
+        if (!post.stockSymbol.isNullOrBlank()) {
+            append("\n\nTicker: ${post.stockSymbol}")
+        }
+        if (!post.imageUrl.isNullOrBlank()) {
+            append("\nImage: ${post.imageUrl}")
+        }
+        if (!post.videoUrl.isNullOrBlank()) {
+            append("\nVideo: ${post.videoUrl}")
+        }
     }
 }

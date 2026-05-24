@@ -8,7 +8,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-fun DocumentSnapshot.toCachedPostEntity(localImagePath: String? = null): CachedPostEntity? {
+fun DocumentSnapshot.toCachedPostEntity(
+    localImagePath: String? = null,
+    currentUserId: String? = null
+): CachedPostEntity? {
     val docId = id
     val authorId = getString("authorId") ?: return null
     val authorUsername = getString("authorUsername") ?: "user"
@@ -19,6 +22,12 @@ fun DocumentSnapshot.toCachedPostEntity(localImagePath: String? = null): CachedP
     val likes = (getLong("likesCount") ?: (get("likesCount") as? Number)?.toLong() ?: 0L).toInt()
     val comments = (getLong("commentsCount") ?: (get("commentsCount") as? Number)?.toLong() ?: 0L).toInt()
     val price = (get("stockPrice") as? Number)?.toDouble()
+    val rawLiked = get("likedUserIds")
+    val likedIds = when (rawLiked) {
+        is List<*> -> rawLiked.filterIsInstance<String>().toSet()
+        else -> emptySet()
+    }
+    val likedByMe = currentUserId != null && currentUserId in likedIds
     return CachedPostEntity(
         id = docId,
         authorId = authorId,
@@ -27,12 +36,15 @@ fun DocumentSnapshot.toCachedPostEntity(localImagePath: String? = null): CachedP
         createdAt = createdAtLabel,
         createdAtMillis = millis,
         likesCount = likes,
+        likedByCurrentUser = likedByMe,
         commentsCount = comments,
         stockSymbol = getString("stockSymbol"),
         stockPrice = price,
         imageUrl = getString("imageUrl"),
+        videoUrl = getString("videoUrl"),
         localImagePath = localImagePath
     )
 }
 
-fun DocumentSnapshot.toPost(): Post? = toCachedPostEntity()?.toPost()
+fun DocumentSnapshot.toPost(localImagePath: String? = null, currentUserId: String? = null): Post? =
+    toCachedPostEntity(localImagePath, currentUserId)?.toPost()

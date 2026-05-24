@@ -9,6 +9,7 @@ import com.stocksocial.repository.PortfolioRepository
 import com.stocksocial.repository.ProfileRepository
 import com.stocksocial.repository.StockDetailsRepository
 import com.stocksocial.repository.WatchlistRepository
+import com.stocksocial.data.prefs.RecentHotSearchStore
 
 class AppViewModelFactory(
     private val authRepository: AuthRepository,
@@ -17,7 +18,8 @@ class AppViewModelFactory(
     private val articlesRepository: ArticlesRepository,
     private val watchlistRepository: WatchlistRepository,
     private val stockDetailsRepository: StockDetailsRepository,
-    private val portfolioRepository: PortfolioRepository
+    private val portfolioRepository: PortfolioRepository,
+    private val recentHotSearchStore: RecentHotSearchStore
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -35,7 +37,7 @@ class AppViewModelFactory(
                 ArticlesViewModel(articlesRepository)
             }
             modelClass.isAssignableFrom(StocksViewModel::class.java) -> {
-                StocksViewModel(watchlistRepository)
+                StocksViewModel(watchlistRepository, profileRepository, recentHotSearchStore)
             }
             modelClass.isAssignableFrom(WatchlistViewModel::class.java) -> {
                 WatchlistViewModel(watchlistRepository)

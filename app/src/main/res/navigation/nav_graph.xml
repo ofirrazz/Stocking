@@ -93,11 +93,11 @@
     </fragment>
 
     <fragment
-        android:id="@+id/notificationsFragment"
-        android:name="com.stocksocial.ui.notifications.NotificationsFragment"
-        android:label="@string/nav_alerts">
+        android:id="@+id/hotStocksFragment"
+        android:name="com.stocksocial.ui.hotstocks.HotStocksFragment"
+        android:label="@string/nav_hot_stocks">
         <action
-            android:id="@+id/action_notificationsFragment_to_stockDetailsFragment"
+            android:id="@+id/action_hotStocksFragment_to_stockDetailsFragment"
             app:destination="@id/stockDetailsFragment" />
     </fragment>
 
@@ -114,9 +114,6 @@
         <action
             android:id="@+id/action_profileFragment_to_stockDetailsFragment"
             app:destination="@id/stockDetailsFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_portfolioFragment"
-            app:destination="@id/portfolioFragment" />
     </fragment>
 
     <fragment

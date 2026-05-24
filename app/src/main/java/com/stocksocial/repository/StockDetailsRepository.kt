@@ -1,5 +1,6 @@
 package com.stocksocial.repository
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.stocksocial.data.remote.toPost
@@ -15,7 +16,8 @@ import kotlinx.coroutines.withContext
 
 class StockDetailsRepository(
     private val apiService: ApiService,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val auth: FirebaseAuth? = null
 ) {
     suspend fun getPriceHistory(symbol: String): RepositoryResult<PriceChartSeries> = withContext(Dispatchers.IO) {
         try {
@@ -96,6 +98,7 @@ class StockDetailsRepository(
 
     suspend fun getPostsForSymbol(symbol: String): RepositoryResult<List<Post>> = withContext(Dispatchers.IO) {
         try {
+            val uid = auth?.currentUser?.uid
             val normalized = symbol.trim().uppercase()
             val byField = firestore.collection("posts")
                 .whereEqualTo("stockSymbol", normalized)
@@ -104,7 +107,7 @@ class StockDetailsRepository(
                 .get()
                 .await()
                 .documents
-                .mapNotNull { it.toPost() }
+                .mapNotNull { it.toPost(currentUserId = uid) }
 
             if (byField.isNotEmpty()) {
                 return@withContext RepositoryResult.Success(byField)
@@ -116,7 +119,7 @@ class StockDetailsRepository(
                 .get()
                 .await()
                 .documents
-                .mapNotNull { it.toPost() }
+                .mapNotNull { it.toPost(currentUserId = uid) }
                 .filter { post ->
                     post.content.contains("$$normalized", ignoreCase = true) ||
                         post.stockSymbol.equals(normalized, ignoreCase = true)

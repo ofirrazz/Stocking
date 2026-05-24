@@ -15,15 +15,17 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class AuthRepository(
-    private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val auth: FirebaseAuth?,
+    private val firestore: FirebaseFirestore?
 ) {
 
     suspend fun login(emailOrUsername: String, password: String): RepositoryResult<User> =
         withContext(Dispatchers.IO) {
+            val firebaseAuth = auth
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
             try {
                 val emailToUse = resolveEmail(emailOrUsername)
-                val result = auth.signInWithEmailAndPassword(emailToUse, password).await()
+                val result = firebaseAuth.signInWithEmailAndPassword(emailToUse, password).await()
                 val u = result.user ?: return@withContext RepositoryResult.Error("Sign-in failed")
                 RepositoryResult.Success(mapFirebaseUser(u))
             } catch (e: FirebaseAuthInvalidUserException) {
@@ -37,8 +39,10 @@ class AuthRepository(
 
     suspend fun register(username: String, email: String, password: String): RepositoryResult<User> =
         withContext(Dispatchers.IO) {
+            val firebaseAuth = auth
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
             try {
-                val result = auth.createUserWithEmailAndPassword(email, password).await()
+                val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
                 val u = result.user ?: return@withContext RepositoryResult.Error("Registration failed")
                 u.updateProfile(
                     UserProfileChangeRequest.Builder().setDisplayName(username).build()
@@ -59,7 +63,7 @@ class AuthRepository(
                 // Firestore profile is optional for successful auth.
                 // If rules/network fail here, user can still continue into the app.
                 try {
-                    firestore.collection("users").document(u.uid).set(userDoc).await()
+                    firestore?.collection("users")?.document(u.uid)?.set(userDoc)?.await()
                 } catch (_: Exception) {
                     // Ignore Firestore profile write failures and rely on FirebaseAuth profile.
                 }
@@ -86,9 +90,11 @@ class AuthRepository(
 
     suspend fun signInWithGoogle(idToken: String): RepositoryResult<User> =
         withContext(Dispatchers.IO) {
+            val firebaseAuth = auth
+                ?: return@withContext RepositoryResult.Error(FIREBASE_NOT_CONFIGURED_MESSAGE)
             try {
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
-                val result = auth.signInWithCredential(credential).await()
+                val result = firebaseAuth.signInWithCredential(credential).await()
                 val u = result.user ?: return@withContext RepositoryResult.Error("Google sign-in failed")
                 ensureFirestoreUserDoc(u)
                 RepositoryResult.Success(mapFirebaseUser(u))
@@ -98,7 +104,8 @@ class AuthRepository(
         }
 
     private suspend fun ensureFirestoreUserDoc(u: FirebaseUser) {
-        val ref = firestore.collection("users").document(u.uid)
+        val firebaseFirestore = firestore ?: return
+        val ref = firebaseFirestore.collection("users").document(u.uid)
         val snap = try {
             ref.get().await()
         } catch (_: Exception) {
@@ -130,9 +137,11 @@ class AuthRepository(
     private suspend fun resolveEmail(emailOrUsername: String): String {
         val normalized = emailOrUsername.trim()
         if (normalized.contains("@")) return normalized
+        val firebaseFirestore = firestore
+            ?: throw IllegalArgumentException("Username login is unavailable right now. Please login with email.")
 
         val snapshot = try {
-            firestore.collection("users")
+            firebaseFirestore.collection("users")
                 .whereEqualTo("username", normalized)
                 .limit(1)
                 .get()
@@ -152,7 +161,7 @@ class AuthRepository(
 
     private suspend fun mapFirebaseUser(u: FirebaseUser): User {
         val doc = try {
-            firestore.collection("users").document(u.uid).get().await()
+            firestore?.collection("users")?.document(u.uid)?.get()?.await()
         } catch (_: Exception) {
             null
         }
@@ -172,6 +181,11 @@ class AuthRepository(
     }
 
     fun logout() {
-        auth.signOut()
+        auth?.signOut()
+    }
+
+    companion object {
+        private const val FIREBASE_NOT_CONFIGURED_MESSAGE =
+            "Firebase is not configured on this build. Add app/google-services.json to enable authentication."
     }
 }
