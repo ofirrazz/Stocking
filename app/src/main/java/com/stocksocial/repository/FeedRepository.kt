@@ -73,12 +73,15 @@ class FeedRepository(
                     if (isVideo) videoUrl = url else imageUrl = url
                 }
                 val doc = firebaseFirestore.collection("posts").document()
+                val avatarUrl = user.photoUrl?.toString()?.takeIf { it.isNotBlank() }
+                    ?: fetchAuthorAvatarUrlFromFirestore(firebaseFirestore, user.uid)
                 doc.set(
                     buildPostPayload(
                         doc.id,
                         user.uid,
                         user.displayName,
                         user.email,
+                        avatarUrl,
                         content,
                         imageUrl,
                         videoUrl
@@ -141,10 +144,17 @@ class FeedRepository(
                     imageUrl = ref.downloadUrl.await().toString()
                 }
 
+                val freshAvatarUrl = user.photoUrl?.toString()?.takeIf { it.isNotBlank() }
+                    ?: fetchAuthorAvatarUrlFromFirestore(firebaseFirestore, user.uid)
+                val freshAuthorUsername = user.displayName?.takeIf { it.isNotBlank() }
+                    ?: user.email?.substringBefore("@")
+                    ?: "user"
                 postRef.update(
                     mapOf(
                         "content" to content.trim(),
-                        "imageUrl" to imageUrl
+                        "imageUrl" to imageUrl,
+                        "authorUsername" to freshAuthorUsername,
+                        "authorPhotoUrl" to freshAvatarUrl
                     )
                 ).await()
 
@@ -261,6 +271,7 @@ class FeedRepository(
         authorId: String,
         displayName: String?,
         email: String?,
+        authorPhotoUrl: String?,
         content: String,
         imageUrl: String?,
         videoUrl: String?
@@ -272,6 +283,7 @@ class FeedRepository(
             "id" to postId,
             "authorId" to authorId,
             "authorUsername" to authorUsername,
+            "authorPhotoUrl" to authorPhotoUrl,
             "content" to normalizedContent,
             "imageUrl" to imageUrl,
             "videoUrl" to videoUrl,
@@ -282,6 +294,16 @@ class FeedRepository(
             "stockSymbol" to extractedSymbol,
             "stockPrice" to null
         )
+    }
+
+    private suspend fun fetchAuthorAvatarUrlFromFirestore(
+        firestore: FirebaseFirestore,
+        uid: String
+    ): String? = try {
+        val userDoc = firestore.collection("users").document(uid).get().await()
+        userDoc.getString("photoUrl")?.takeIf { it.isNotBlank() }
+    } catch (_: Exception) {
+        null
     }
 
     private fun mediaExtensionForMime(mime: String, isVideo: Boolean): String {

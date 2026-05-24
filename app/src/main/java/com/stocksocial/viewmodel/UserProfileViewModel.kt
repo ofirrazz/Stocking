@@ -38,12 +38,26 @@ class UserProfileViewModel(
     private val _watchlistState = MutableStateFlow(UiState<List<WatchlistItem>>(data = emptyList()))
     val watchlistStateLive: LiveData<UiState<List<WatchlistItem>>> = _watchlistState.asLiveData()
 
+    private val _followState = MutableStateFlow(FollowUiState())
+    val followStateLive: LiveData<FollowUiState> = _followState.asLiveData()
+
+    private var currentUsername: String? = null
+
+    data class FollowUiState(
+        val isLoading: Boolean = false,
+        val isFollowing: Boolean = false,
+        val isSelf: Boolean = false,
+        val errorMessage: String? = null
+    )
+
     fun load(username: String) {
+        currentUsername = username
         viewModelScope.launch {
             _profileState.value = UiState(isLoading = true)
             _postsState.value = UiState(isLoading = true, data = emptyList())
             _portfolioState.value = UiState(isLoading = true, data = emptyList())
             _watchlistState.value = UiState(isLoading = true, data = emptyList())
+            refreshFollowState()
 
             when (val prof = profileRepository.getPublicProfileByUsername(username)) {
                 is RepositoryResult.Error -> {
@@ -77,6 +91,71 @@ class UserProfileViewModel(
                     }
                 }
             }
+        }
+    }
+
+    fun toggleFollow() {
+        val username = currentUsername ?: return
+        val currentState = _followState.value
+        if (currentState.isLoading || currentState.isSelf) return
+        viewModelScope.launch {
+            _followState.value = currentState.copy(isLoading = true, errorMessage = null)
+            val result = if (currentState.isFollowing) {
+                profileRepository.unfollowUserByUsername(username)
+            } else {
+                profileRepository.followUserByUsername(username)
+            }
+            when (result) {
+                is RepositoryResult.Success -> {
+                    _followState.value = currentState.copy(
+                        isLoading = false,
+                        isFollowing = !currentState.isFollowing
+                    )
+                    profileRepository.getPublicProfileByUsername(username).let { prof ->
+                        if (prof is RepositoryResult.Success) {
+                            _profileState.value = UiState(data = prof.data)
+                        }
+                    }
+                }
+                is RepositoryResult.Error -> {
+                    _followState.value = currentState.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun consumeFollowError() {
+        _followState.value = _followState.value.copy(errorMessage = null)
+    }
+
+    private suspend fun refreshFollowState() {
+        val username = currentUsername ?: return
+        _followState.value = _followState.value.copy(isLoading = true, errorMessage = null)
+        when (val res = profileRepository.isFollowingByUsername(username)) {
+            is RepositoryResult.Success -> {
+                _followState.value = _followState.value.copy(
+                    isLoading = false,
+                    isFollowing = res.data,
+                    isSelf = isSelfProfile(username)
+                )
+            }
+            is RepositoryResult.Error -> {
+                _followState.value = _followState.value.copy(
+                    isLoading = false,
+                    isSelf = isSelfProfile(username),
+                    errorMessage = res.message
+                )
+            }
+        }
+    }
+
+    private suspend fun isSelfProfile(username: String): Boolean {
+        return when (val me = profileRepository.getProfile()) {
+            is RepositoryResult.Success -> me.data.username.equals(username, ignoreCase = true)
+            is RepositoryResult.Error -> false
         }
     }
 

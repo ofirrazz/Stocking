@@ -15,6 +15,7 @@ fun DocumentSnapshot.toCachedPostEntity(
     val docId = id
     val authorId = getString("authorId") ?: return null
     val authorUsername = getString("authorUsername") ?: "user"
+    val authorAvatarUrl = getString("authorPhotoUrl")?.takeIf { it.isNotBlank() }
     val content = getString("content") ?: ""
     val millis = getLong("createdAt") ?: 0L
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
@@ -32,6 +33,7 @@ fun DocumentSnapshot.toCachedPostEntity(
         id = docId,
         authorId = authorId,
         authorUsername = authorUsername,
+        authorAvatarUrl = authorAvatarUrl,
         content = content,
         createdAt = createdAtLabel,
         createdAtMillis = millis,

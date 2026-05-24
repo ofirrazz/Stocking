@@ -162,6 +162,8 @@
     <string name="live_price">Live Price</string>
     <string name="cached_data_note">Offline mode: showing cached data.</string>
     <string name="follow">Follow</string>
+    <string name="following">Following</string>
+    <string name="unfollow_success">User unfollowed</string>
     <string name="follow_success">User followed successfully</string>
     <string name="share">Share</string>
     <string name="stock_symbol_hint">Stock symbol (e.g. AAPL)</string>
@@ -187,7 +189,6 @@
     <string name="stock_rating_weak">Weak</string>
     <string name="stock_details_subtitle">Today • Live</string>
     <string name="stock_tab_overview">Overview</string>
-    <string name="stock_tab_institutional">Institutional</string>
     <string name="stock_tab_analysts">Analysts</string>
     <string name="stock_sentiment_title">Community sentiment</string>
     <string name="stock_sentiment_bullish">Bullish</string>
@@ -202,7 +203,13 @@
     <string name="stock_metric_div">Dividend</string>
     <string name="stock_metric_eps">EPS</string>
     <string name="stock_out_of_10">out of 10</string>
-    <string name="stock_institutional_soon">Coming soon: institutional holdings and activity.</string>
+    <string name="stock_analyst_updated">Updated for %1$s</string>
+    <string name="stock_analyst_total">%1$d analysts covering this stock</string>
+    <string name="stock_info">Learn more</string>
+    <string name="stock_info_close">Got it</string>
+    <string name="stock_metric_pe_help">P/E ratio (Price to Earnings) shows how much investors pay for every dollar the company earns. A high P/E often means the market expects strong future growth; a low P/E may signal a mature or undervalued company.</string>
+    <string name="stock_metric_eps_help">EPS (Earnings Per Share) is the company\'s yearly profit divided by the number of shares. The higher and more stable it is, the more profitable the company is per share you own.</string>
+    <string name="stock_stat_volume_help">Volume is the number of shares traded today. Higher volume means more activity and easier buying/selling near the current price. Very low volume can make trades move the price more.</string>
     <string name="stock_favorite_toast">Favorites — coming soon</string>
     <string name="stock_add_portfolio_toast">Add to portfolio — coming soon</string>
     <string name="stock_sentiment_percent">%1$d%%</string>

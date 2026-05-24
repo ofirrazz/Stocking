@@ -108,23 +108,6 @@
                 android:textColor="@color/black" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/tabInstitutionalButton"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="6dp"
-                android:layout_weight="1"
-                android:text="@string/stock_tab_institutional"
-                android:textAllCaps="false"
-                android:textSize="12sp"
-                android:textColor="@color/text_muted"
-                app:cornerRadius="14dp"
-                app:icon="@drawable/ic_list_lines"
-                app:iconGravity="textStart"
-                app:iconTint="@color/text_muted"
-                app:strokeColor="@color/border" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tabAnalystsButton"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
@@ -267,9 +250,26 @@
                         android:orientation="horizontal">
 
                         <LinearLayout style="@style/StockStatColumn">
-                            <TextView
-                                style="@style/StockStatLabel"
-                                android:text="@string/stock_stat_volume" />
+                            <LinearLayout
+                                android:id="@+id/statVolumeHeader"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    style="@style/StockStatLabel"
+                                    android:text="@string/stock_stat_volume" />
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:layout_marginStart="4dp"
+                                    android:contentDescription="@string/stock_info"
+                                    android:src="@drawable/ic_info_outline"
+                                    app:tint="@color/text_muted" />
+                            </LinearLayout>
                             <TextView
                                 android:id="@+id/statVolumeText"
                                 style="@style/StockStatValue"
@@ -662,13 +662,29 @@
                             android:orientation="vertical"
                             android:padding="14dp">
 
-                            <TextView
+                            <LinearLayout
+                                android:id="@+id/metricPeHeader"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:gravity="end"
-                                android:text="@string/stock_metric_pe"
-                                android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:background="?attr/selectableItemBackground"
+                                android:gravity="end|center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/stock_metric_pe"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="12sp" />
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:layout_marginStart="4dp"
+                                    android:contentDescription="@string/stock_info"
+                                    android:src="@drawable/ic_info_outline"
+                                    app:tint="@color/text_muted" />
+                            </LinearLayout>
 
                             <TextView
                                 android:id="@+id/metricPeText"
@@ -782,13 +798,29 @@
                             android:orientation="vertical"
                             android:padding="14dp">
 
-                            <TextView
+                            <LinearLayout
+                                android:id="@+id/metricEpsHeader"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:gravity="end"
-                                android:text="@string/stock_metric_eps"
-                                android:textColor="@color/text_muted"
-                                android:textSize="12sp" />
+                                android:background="?attr/selectableItemBackground"
+                                android:gravity="end|center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/stock_metric_eps"
+                                    android:textColor="@color/text_muted"
+                                    android:textSize="12sp" />
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:layout_marginStart="4dp"
+                                    android:contentDescription="@string/stock_info"
+                                    android:src="@drawable/ic_info_outline"
+                                    app:tint="@color/text_muted" />
+                            </LinearLayout>
 
                             <TextView
                                 android:id="@+id/metricEpsText"
@@ -823,18 +855,6 @@
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/sectionInstitutional"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:gravity="center"
-            android:padding="24dp"
-            android:text="@string/stock_institutional_soon"
-            android:textColor="@color/text_muted"
-            android:textSize="15sp"
-            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/sectionAnalysts"
